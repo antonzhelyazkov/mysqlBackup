@@ -235,8 +235,13 @@ if (!defined $pigz && defined $pigzPath) {
 }
 
 if (defined($keepRemoteCopy) && (!defined($remoteCopyDays) || !defined($ftpHost) || !defined($ftpPort) || !defined($ftpUser) || !defined($ftpPass)) ) {
-#	LogPrint("If you want to use ftp storage add --remote-copy --remote-copy-days=<days> --ftp-host=<ip\/host> --ftp-port=<default 21> --ftp-user=<user> --ftp-pass=<pass>");
+	LogPrint("If you want to use ftp storage add --remote-copy --remote-copy-days=<days> --ftp-host=<ip\/host> --ftp-port=<default 21> --ftp-user=<user> --ftp-pass=<pass>");
 	exit(0);
+}
+
+if (!defined($keepRemoteCopy) && (defined($remoteCopyDays) || defined($ftpHost) || defined($ftpPort) || defined($ftpUser) || defined($ftpPass)) ) {
+        LogPrint("If you want to use ftp storage add --remote-copy --remote-copy-days=<days> --ftp-host=<ip\/host> --ftp-port=<default 21> --ftp-user=<user> --ftp-pass=<pass>");
+        exit(0);
 }
 
 if (!defined($ftpPort)) {
