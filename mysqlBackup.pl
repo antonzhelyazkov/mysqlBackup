@@ -41,6 +41,7 @@ my $mysqlDumpBinary = "/bin/mysqldump";
 my $logFile = "/var/log/mysqlBackup.log";
 my $pigzPathDefault = "/bin/pigz";
 my $ftpPortDefault = 21;
+my $localDirectoryName = "mysql";
 
 my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
 #my $formatted = sprintf "%4u-%02u-%02u %02u:%02u:%02u", $year+1900, $mon+1, $mday, $hour, $min, $sec;
@@ -190,23 +191,39 @@ sub createLocalDirectory {
 
 my $database = shift;
 
-if ( !-d "$localCopyPath\/mysql" ) {
-	mkdir("$localCopyPath\/mysql" );
+if ( !-d "$localCopyPath\/$localDirectoryName" ) {
+	mkdir("$localCopyPath\/$localDirectoryName" );
 }
 
-if ( !-d "$localCopyPath\/mysql\/$dateStamp" ) {
-        mkdir("$localCopyPath/mysql/$dateStamp");
+if ( !-d "$localCopyPath\/$localDirectoryName\/$dateStamp" ) {
+        mkdir("$localCopyPath/$localDirectoryName/$dateStamp");
 }
 
-if ( !-d "$localCopyPath\/mysql\/$dateStamp\/$hourStamp" ) {
-	mkdir("$localCopyPath\/mysql\/$dateStamp\/$hourStamp");
+if ( !-d "$localCopyPath\/$localDirectoryName\/$dateStamp\/$hourStamp" ) {
+	mkdir("$localCopyPath\/$localDirectoryName\/$dateStamp\/$hourStamp");
 }
 
-if ( !-d "$localCopyPath\/mysql\/$dateStamp\/$hourStamp\/$database" ) {
-        mkdir("$localCopyPath\/mysql\/$dateStamp\/$hourStamp\/$database");
+if ( !-d "$localCopyPath\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database" ) {
+        mkdir("$localCopyPath\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database");
 }
 
-return "$localCopyPath\/mysql\/$dateStamp\/$hourStamp\/$database/";
+return "$localCopyPath\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database/";
+
+}
+
+sub removeLocalDirectory {
+
+if ( -d "$localCopyPath\/$localDirectoryName" ) {
+
+opendir (DIR, "$localCopyPath\/$localDirectoryName");
+my @folder = readdir(DIR);
+foreach my $f (@folder) {
+	next if ($f =~ /\./);
+	print "$localCopyPath\/$localDirectoryName/$f\n";
+	print localtime((stat("$localCopyPath\/$localDirectoryName/$f"))[9]) . "\n";
+}
+
+}
 
 }
 
@@ -215,11 +232,6 @@ sub help {
 my @showHelpMsg =
         (
                 "USAGE:",
-#                "    -s --stopslave       To execute Stop Slave before dumping. Default: false . Example: '--stopslave=true'",
-#                "    -a --alldbinonefile  To execute Stop Slave before dumping. Default: false . Example: '--alldbinonefile=true'",
-#                "    -h --help            Display help message (this).",
-#                "",
-
 		"--local-copy",
                 "--local-copy-path",
                 "--local-copy-days",
@@ -338,6 +350,10 @@ if ($tmpDir=~/(.*)\/$/) {
         $tmpDir = $1;
 }
 
+if ($localCopyPath=~/(.*)\/$/) {
+        $localCopyPath = $1;
+}
+
 if (!-d $tmpDir) {
         LogPrint("Directory $tmpDir does not exist");
         exit(0);
@@ -428,7 +444,11 @@ if ( $dbName eq "all" ) {
         }
 }
 
-if ( defined $stopSlave ) {
+if ( defined($keepLocalCopy)) {
+	removeLocalDirectory();
+}
+
+if ( defined($stopSlave)) {
         startSlave();
         sleep 1;
         if ( showSlaveStatus() ) {
