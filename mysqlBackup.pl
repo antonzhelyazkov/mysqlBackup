@@ -4,6 +4,7 @@ use strict;
 use Getopt::Long;
 use DBI;
 use IO::Compress::Gzip qw(gzip $GzipError);
+use File::Copy;
 
 my $stopSlave;
 my $verbose;
@@ -40,6 +41,11 @@ my $mysqlDumpBinary = "/bin/mysqldump";
 my $logFile = "/var/log/mysqlBackup.log";
 my $pigzPathDefault = "/bin/pigz";
 my $ftpPortDefault = 21;
+
+my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
+#my $formatted = sprintf "%4u-%02u-%02u %02u:%02u:%02u", $year+1900, $mon+1, $mday, $hour, $min, $sec;
+my $dateStamp = sprintf "%02u-%02u", $mon+1, $mday;
+my $hourStamp = sprintf "%02u-%02u", $hour, $min;
 
 GetOptions (    "local-copy"		=> \$keepLocalCopy,
 		"local-copy-path=s"	=> \$localCopyPath,
@@ -180,6 +186,30 @@ $dbh->disconnect;
 
 }
 
+sub createLocalDirectory {
+
+my $database = shift;
+
+if ( !-d "$localCopyPath\/mysql" ) {
+	mkdir("$localCopyPath\/mysql" );
+}
+
+if ( !-d "$localCopyPath\/mysql\/$dateStamp" ) {
+        mkdir("$localCopyPath/mysql/$dateStamp");
+}
+
+if ( !-d "$localCopyPath\/mysql\/$dateStamp\/$hourStamp" ) {
+	mkdir("$localCopyPath\/mysql\/$dateStamp\/$hourStamp");
+}
+
+if ( !-d "$localCopyPath\/mysql\/$dateStamp\/$hourStamp\/$database" ) {
+        mkdir("$localCopyPath\/mysql\/$dateStamp\/$hourStamp\/$database");
+}
+
+return "$localCopyPath\/mysql\/$dateStamp\/$hourStamp\/$database/";
+
+}
+
 sub help {
 print "HELP\n";
 }
@@ -219,8 +249,13 @@ if (defined $pigz) {
 	}
 }
 
+if (!defined($keepLocalCopy) && !defined($keepRemoteCopy)) {
+	LogPrint("You must set destination --local-copy or --remote-copy");
+	exit(0);
+}
+
 if (defined $keepLocalCopy && (!defined $localCopyPath || !defined $localCopyDays)) {
-	LogPrint("If you want to use --keep-local-copy, you must define --local-copy-path and --local-copy-days");
+	LogPrint("If you want to use --local-copy, you must define --local-copy-path and --local-copy-days");
 	exit(0);
 } else {
 	if ( !-d $localCopyPath ) {
@@ -314,12 +349,20 @@ if ( $dbName eq "all" ) {
 				$pigzCommand = "$mysqlDumpBinary $db $table | $pigzPath > $tmpDir/$table.sql.gz";
 				print "$pigzCommand\n";
 				system($pigzCommand);
+				if (defined($keepLocalCopy)) {
+					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error in $db $table.sql.gz");
+				}
+				unlink("$tmpDir/$table.sql.gz");
 			} else {
 				$mysqldumpCommand = "$mysqlDumpBinary $db $table > $tmpDir/$table.sql";
 				print "$mysqldumpCommand\n";
 				system($mysqldumpCommand);
 				gzip "$tmpDir/$table.sql" => "$tmpDir/$table.sql.gz" or die "gzip failed: $GzipError\n";
+				if (defined($keepLocalCopy)) {
+					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error in $db $table.sql.gz");
+				}
 				unlink("$tmpDir/$table.sql");
+				unlink("$tmpDir/$table.sql.gz");
 			}
                 }
         }
@@ -333,12 +376,20 @@ if ( $dbName eq "all" ) {
                 	$pigzCommand = "$mysqlDumpBinary $dbName $table | $pigzPath > $tmpDir/$table.sql.gz";
 			print "$pigzCommand\n";
 			system($pigzCommand);
+			if (defined($keepLocalCopy)) {
+				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error in $dbName $table.sql.gz");
+			}
+			unlink("$tmpDir/$table.sql.gz");
 		} else {
 			$mysqldumpCommand = "$mysqlDumpBinary $dbName $table > $tmpDir/$table.sql";
 			print "$mysqldumpCommand\n";
 			system($mysqldumpCommand);
 			gzip "$tmpDir/$table.sql" => "$tmpDir/$table.sql.gz" or die "gzip failed: $GzipError\n";
+			if (defined($keepLocalCopy)) {
+				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error in $dbName $table.sql.gz");
+			}
 			unlink("$tmpDir/$table.sql");
+			unlink("$tmpDir/$table.sql.gz");
 		}
         }
 }
