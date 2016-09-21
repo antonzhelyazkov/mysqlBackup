@@ -211,7 +211,41 @@ return "$localCopyPath\/mysql\/$dateStamp\/$hourStamp\/$database/";
 }
 
 sub help {
-print "HELP\n";
+
+my @showHelpMsg =
+        (
+                "USAGE:",
+#                "    -s --stopslave       To execute Stop Slave before dumping. Default: false . Example: '--stopslave=true'",
+#                "    -a --alldbinonefile  To execute Stop Slave before dumping. Default: false . Example: '--alldbinonefile=true'",
+#                "    -h --help            Display help message (this).",
+#                "",
+
+		"--local-copy",
+                "--local-copy-path",
+                "--local-copy-days",
+                "--stop-slave",
+                "--database",
+                "--password",
+                "--host",
+                "--port",
+                "--verbose",
+                "--ignore-slave-running",
+                "--exclude-table",
+                "--exclude-database",
+                "--pigz",
+                "--pigz-path",
+                "--remote-copy",
+                "--remote-copy-days",
+                "--ftp-host",
+                "--ftp-port",
+                "--ftp-user",
+                "--ftp-pass",
+                "--tmpdir",
+		"",
+        );
+
+print join("\n", @showHelpMsg);
+
 }
 
 ##### Main #####
