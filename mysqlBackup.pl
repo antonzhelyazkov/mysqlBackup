@@ -136,7 +136,7 @@ while ( my $row = $tables_to_backup->fetchrow_arrayref ) {
 $tables_to_backup->finish();
 $dbh->disconnect;
 
-print "showTables in $database\n";
+#print "showTables in $database\n";
 return @tables;
 
 }
@@ -263,6 +263,12 @@ if ( $ftp ) {
 	$ftp->mkdir($ftpDir5);
 	LogPrint("FTP Transfer $tmpFile, $ftpDir5$tmpFile");
 	$ftp->put( "$tmpDir$tmpFile", "$ftpDir5$tmpFile" ) or return "Error in transfer $tmpFile", $ftp->message;
+
+	if ( $ftp->size("$ftpDir5$tmpFile") == (-s "$tmpDir$tmpFile") ) {
+		LogPrint("ftp transfer to $ftpHost is successful");
+	} else {
+		LogPrint("ftp transfer to $ftpHost FAILED");
+	}
 	$ftp->close();
 } else {
 	LogPrint("ftp connection to $ftpHost NOT established");
@@ -449,7 +455,7 @@ if ( $dbName eq "all" ) {
                 for $table (showTables($db)) {
 			if (defined $pigz) {
 				$pigzCommand = "$mysqlDumpBinary $db $table | $pigzPath > $tmpDir/$table.sql.gz";
-				print "$pigzCommand\n";
+				#print "$pigzCommand\n";
 				system($pigzCommand);
 				if (defined($keepLocalCopy)) {
 					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error in $db $table.sql.gz");
@@ -460,7 +466,7 @@ if ( $dbName eq "all" ) {
 				unlink("$tmpDir/$table.sql.gz");
 			} else {
 				$mysqldumpCommand = "$mysqlDumpBinary $db $table > $tmpDir/$table.sql";
-				print "$mysqldumpCommand\n";
+				#print "$mysqldumpCommand\n";
 				system($mysqldumpCommand);
 				gzip "$tmpDir/$table.sql" => "$tmpDir/$table.sql.gz" or die "gzip failed: $GzipError\n";
 				if (defined($keepLocalCopy)) {
@@ -482,7 +488,7 @@ if ( $dbName eq "all" ) {
                 }
 		if (defined $pigz) {
                 	$pigzCommand = "$mysqlDumpBinary $dbName $table | $pigzPath > $tmpDir/$table.sql.gz";
-			print "$pigzCommand\n";
+			#print "$pigzCommand\n";
 			system($pigzCommand);
 			if (defined($keepLocalCopy)) {
 				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error in $dbName $table.sql.gz");
@@ -493,7 +499,7 @@ if ( $dbName eq "all" ) {
 			unlink("$tmpDir/$table.sql.gz");
 		} else {
 			$mysqldumpCommand = "$mysqlDumpBinary $dbName $table > $tmpDir/$table.sql";
-			print "$mysqldumpCommand\n";
+			#print "$mysqldumpCommand\n";
 			system($mysqldumpCommand);
 			gzip "$tmpDir/$table.sql" => "$tmpDir/$table.sql.gz" or die "gzip failed: $GzipError\n";
 			if (defined($keepLocalCopy)) {
