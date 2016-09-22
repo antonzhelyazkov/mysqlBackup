@@ -7,6 +7,8 @@ use IO::Compress::Gzip qw(gzip $GzipError);
 use File::Copy;
 use Time::Piece;
 use File::Path;
+use Net::FTP;
+use Sys::Hostname;
 
 my $stopSlave;
 my $verbose;
@@ -215,14 +217,14 @@ return "$localCopyPath\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database/"
 
 sub removeLocalDirectory {
 
-my $localCopyDaysSeconds = $localCopyDays * 1;
+my $deleteTime = time() - ($localCopyDays * 86400);
 
 if ( -d "$localCopyPath\/$localDirectoryName" ) {
 	opendir (DIR, "$localCopyPath\/$localDirectoryName");
 	my @folder = readdir(DIR);
 	foreach my $f (@folder) {
 		next if ($f =~ /\./);
-		next if (scalar((stat("$localCopyPath\/$localDirectoryName\/$f"))[9]) < scalar( time - $localCopyDaysSeconds ));
+		next if (scalar((stat("$localCopyPath\/$localDirectoryName\/$f"))[9]) > $deleteTime);
 		rmtree("$localCopyPath\/$localDirectoryName\/$f");
 		if (-d "$localCopyPath\/$localDirectoryName\/$f") {
 			LogPrint("Could not remove directory $localCopyPath\/$localDirectoryName\/$f");
@@ -231,6 +233,14 @@ if ( -d "$localCopyPath\/$localDirectoryName" ) {
 		}
 	}
 }
+}
+
+sub ftpTransfer {
+
+my $hostname =  hostname;
+my @hostname = split('\.', $hostname);
+my $ftpDir = $hostname[0]."/";
+
 }
 
 sub help {
