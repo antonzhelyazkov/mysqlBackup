@@ -6,6 +6,7 @@ use DBI;
 use IO::Compress::Gzip qw(gzip $GzipError);
 use File::Copy;
 use Time::Piece;
+use Time::Local;
 use File::Path;
 use Net::FTP;
 use Sys::Hostname;
@@ -49,7 +50,7 @@ my $localDirectoryName = "mysql";
 
 my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
 #my $formatted = sprintf "%4u-%02u-%02u %02u:%02u:%02u", $year+1900, $mon+1, $mday, $hour, $min, $sec;
-my $dateStamp = sprintf "%02u-%02u", $mon+1, $mday;
+my $dateStamp = sprintf "%4u-%02u-%02u", $year+1900, $mon+1, $mday;
 my $hourStamp = sprintf "%02u-%02u", $hour, $min;
 
 GetOptions (    "local-copy"		=> \$keepLocalCopy,
@@ -235,6 +236,36 @@ if ( -d "$localCopyPath\/$localDirectoryName" ) {
 }
 }
 
+sub removeRemoteDirectory {
+
+my $hostname =  hostname;
+my @hostname = split('\.', $hostname);
+my $ftpDir1 = $hostname[0];
+my $timeCode;
+my $deleteTime = time() - ($remoteCopyDays * 86400);
+
+my $ftp = Net::FTP->new( "$ftpHost", Port => "$ftpPort", Debug => 0, Timeout => 2 );
+$ftp->login( $ftpUser, $ftpPass ) or return "Cannot login ", $ftp->message;
+my @dirs = $ftp->ls("$ftpDir1\/$localDirectoryName");
+
+for my $dir (@dirs) {
+	next if ($dir =~ /\./);
+	$timeCode = $dir;
+	$timeCode =~ s/$ftpDir1\/$localDirectoryName\///;
+	if (dateToEpoch($timeCode) < $deleteTime) {
+		LogPrint("Removing Directory $dir");
+		$ftp->rmdir($dir, 1);
+		if ($ftp->cwd($dir)) {
+			LogPrint("Remove directory failed $dir");
+		} else {
+			LogPrint("Directory $dir successfully removed");
+		}
+	}
+}
+
+$ftp->close();
+}
+
 sub ftpTransfer {
 
 my $tmpFile = shift;
@@ -273,6 +304,17 @@ if ( $ftp ) {
 } else {
 	LogPrint("ftp connection to $ftpHost NOT established");
 }
+}
+
+sub dateToEpoch {
+my $date = shift;
+my @date = split /-/, $date;
+
+$date[0] =~ s/\b0+(?=\d)//g;
+$date[1] =~ s/\b0+(?=\d)//g;
+$date[2] =~ s/\b0+(?=\d)//g;
+
+return timelocal(0,0,0,$date[2],$date[1]-1,$date[0]);
 }
 
 sub help {
@@ -516,6 +558,10 @@ if ( $dbName eq "all" ) {
 
 if ( defined($keepLocalCopy)) {
 	removeLocalDirectory();
+}
+
+if ( defined($keepRemoteCopy)) {
+	removeRemoteDirectory();
 }
 
 if ( defined($stopSlave)) {
