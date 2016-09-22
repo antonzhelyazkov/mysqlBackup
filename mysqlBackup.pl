@@ -215,16 +215,20 @@ return "$localCopyPath\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database/"
 
 sub removeLocalDirectory {
 
-my $localCopyDaysSeconds = $localCopyDays * 86400;
+my $localCopyDaysSeconds = $localCopyDays * 1;
 
 if ( -d "$localCopyPath\/$localDirectoryName" ) {
 	opendir (DIR, "$localCopyPath\/$localDirectoryName");
 	my @folder = readdir(DIR);
 	foreach my $f (@folder) {
 		next if ($f =~ /\./);
-		next if (scalar((stat("$localCopyPath\/$localDirectoryName/$f"))[9]) < scalar( time - $localCopyDaysSeconds ));
-		my $files_deleted = rmtree("$localCopyPath\/$localDirectoryName/$f");
-		LogPrint("deleted files $files_deleted");
+		next if (scalar((stat("$localCopyPath\/$localDirectoryName\/$f"))[9]) < scalar( time - $localCopyDaysSeconds ));
+		rmtree("$localCopyPath\/$localDirectoryName\/$f");
+		if (-d "$localCopyPath\/$localDirectoryName\/$f") {
+			LogPrint("Could not remove directory $localCopyPath\/$localDirectoryName\/$f");
+		} else {
+			LogPrint("Directory $localCopyPath\/$localDirectoryName\/$f deleted");
+		}
 	}
 }
 }
