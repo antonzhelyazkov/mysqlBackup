@@ -237,10 +237,36 @@ if ( -d "$localCopyPath\/$localDirectoryName" ) {
 
 sub ftpTransfer {
 
+my $tmpFile = shift;
 my $hostname =  hostname;
 my @hostname = split('\.', $hostname);
-my $ftpDir = $hostname[0]."/";
+my $ftpDir1 = $hostname[0];
+my $database = shift;
 
+$tmpFile =~ s/$tmpDir//;
+
+my $ftpDir2 = "$ftpDir1\/$localDirectoryName";
+my $ftpDir3 = "$ftpDir1\/$localDirectoryName\/$dateStamp";
+my $ftpDir4 = "$ftpDir1\/$localDirectoryName\/$dateStamp\/$hourStamp";
+my $ftpDir5 = "$ftpDir1\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database";
+
+my $ftp = Net::FTP->new( "$ftpHost", Port => "$ftpPort", Debug => 0, Timeout => 2 );
+
+if ( $ftp ) {
+	LogPrint("ftp connection to $ftpHost established");
+	$ftp->login( $ftpUser, $ftpPass ) or return "Cannot login ", $ftp->message;
+	$ftp->binary();
+	$ftp->mkdir($ftpDir1);
+	$ftp->mkdir($ftpDir2);
+	$ftp->mkdir($ftpDir3);
+	$ftp->mkdir($ftpDir4);
+	$ftp->mkdir($ftpDir5);
+	LogPrint("FTP Transfer $tmpFile, $ftpDir5$tmpFile");
+	$ftp->put( "$tmpDir$tmpFile", "$ftpDir5$tmpFile" ) or return "Error in transfer $tmpFile", $ftp->message;
+	$ftp->close();
+} else {
+	LogPrint("ftp connection to $ftpHost NOT established");
+}
 }
 
 sub help {
@@ -428,6 +454,9 @@ if ( $dbName eq "all" ) {
 				if (defined($keepLocalCopy)) {
 					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error in $db $table.sql.gz");
 				}
+				if (defined($keepRemoteCopy)) {
+					ftpTransfer("$tmpDir/$table.sql.gz", $db);
+				}
 				unlink("$tmpDir/$table.sql.gz");
 			} else {
 				$mysqldumpCommand = "$mysqlDumpBinary $db $table > $tmpDir/$table.sql";
@@ -437,6 +466,9 @@ if ( $dbName eq "all" ) {
 				if (defined($keepLocalCopy)) {
 					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error in $db $table.sql.gz");
 				}
+				if (defined($keepRemoteCopy)) {
+                                        ftpTransfer("$tmpDir/$table.sql.gz", $db);
+                                }
 				unlink("$tmpDir/$table.sql");
 				unlink("$tmpDir/$table.sql.gz");
 			}
@@ -455,6 +487,9 @@ if ( $dbName eq "all" ) {
 			if (defined($keepLocalCopy)) {
 				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error in $dbName $table.sql.gz");
 			}
+			if (defined($keepRemoteCopy)) {
+                        	ftpTransfer("$tmpDir/$table.sql.gz", $dbName);
+                        }
 			unlink("$tmpDir/$table.sql.gz");
 		} else {
 			$mysqldumpCommand = "$mysqlDumpBinary $dbName $table > $tmpDir/$table.sql";
@@ -464,6 +499,9 @@ if ( $dbName eq "all" ) {
 			if (defined($keepLocalCopy)) {
 				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error in $dbName $table.sql.gz");
 			}
+			if (defined($keepRemoteCopy)) {
+                                ftpTransfer("$tmpDir/$table.sql.gz", $dbName);
+                        }
 			unlink("$tmpDir/$table.sql");
 			unlink("$tmpDir/$table.sql.gz");
 		}
