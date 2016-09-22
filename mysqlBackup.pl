@@ -5,6 +5,8 @@ use Getopt::Long;
 use DBI;
 use IO::Compress::Gzip qw(gzip $GzipError);
 use File::Copy;
+use Time::Piece;
+use File::Path;
 
 my $stopSlave;
 my $verbose;
@@ -213,18 +215,18 @@ return "$localCopyPath\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database/"
 
 sub removeLocalDirectory {
 
+my $localCopyDaysSeconds = $localCopyDays * 86400;
+
 if ( -d "$localCopyPath\/$localDirectoryName" ) {
-
-opendir (DIR, "$localCopyPath\/$localDirectoryName");
-my @folder = readdir(DIR);
-foreach my $f (@folder) {
-	next if ($f =~ /\./);
-	print "$localCopyPath\/$localDirectoryName/$f\n";
-	print localtime((stat("$localCopyPath\/$localDirectoryName/$f"))[9]) . "\n";
+	opendir (DIR, "$localCopyPath\/$localDirectoryName");
+	my @folder = readdir(DIR);
+	foreach my $f (@folder) {
+		next if ($f =~ /\./);
+		next if (scalar((stat("$localCopyPath\/$localDirectoryName/$f"))[9]) < scalar( time - $localCopyDaysSeconds ));
+		my $files_deleted = rmtree("$localCopyPath\/$localDirectoryName/$f");
+		LogPrint("deleted files $files_deleted");
+	}
 }
-
-}
-
 }
 
 sub help {
@@ -308,6 +310,16 @@ if (defined $keepLocalCopy && (!defined $localCopyPath || !defined $localCopyDay
 		LogPrint("Destination does not exist. Try mkdir -p $localCopyPath");
 		exit(0);
 	}
+}
+
+if ( defined($remoteCopyDays) && $remoteCopyDays < 1 ) {
+	LogPrint("Value --local-copy-days must be greater or equal to 1");
+	exit(0)
+}
+
+if ( defined($localCopyDays) && $localCopyDays < 1 ) {
+        LogPrint("Value --local-copy-days must be greater or equal to 1");
+        exit(0)
 }
 
 if (!defined $pigz && defined $pigzPath) {
