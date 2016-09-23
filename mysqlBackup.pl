@@ -32,6 +32,7 @@ my $ftpHost;
 my $ftpPort;
 my $ftpUser;
 my $ftpPass;
+my $logFile;
 
 my $mysqlRootPass;
 my $mysqlHost;
@@ -43,7 +44,7 @@ my $mysqlPortDefault = 3306;
 
 my $tmpDirDefault = "/var/tmp";
 my $mysqlDumpBinary = "/bin/mysqldump";
-my $logFile = "/var/log/mysqlBackup.log";
+my $logFileDefault = "/var/log/mysqlBackup.log";
 my $pigzPathDefault = "/bin/pigz";
 my $ftpPortDefault = 21;
 my $localDirectoryName = "mysql";
@@ -73,6 +74,7 @@ GetOptions (    "local-copy"		=> \$keepLocalCopy,
 		"ftp-port=i"		=> \$ftpPort,
 		"ftp-user=s"		=> \$ftpUser,
 		"ftp-pass=s"		=> \$ftpPass,
+		"log-file=s"		=> \$logFile,
                 "tmpdir=s"              => \$tmpDir)
                 or die("Error in command line arguments\n");
 
@@ -343,7 +345,9 @@ my @showHelpMsg =
                 "--ftp-user",
                 "--ftp-pass",
                 "--tmpdir",
+		"--log-file",
 		"",
+		"example: /mysqlBackup.pl --password=<mysql root password> --tmpdir=/tmp/ --exclude-database=vod,c1neterraf1b,bgmedia --stop-slave --local-copy --local-copy-days=1 --local-copy-path=/var/tmp --remote-copy --remote-copy-days=1 --ftp-host=<host/ip> --ftp-port=<port> --ftp-user=<user> --ftp-pass=<password>",
         );
 
 print join("\n", @showHelpMsg);
@@ -355,6 +359,10 @@ print join("\n", @showHelpMsg);
 if ( !defined($keepLocalCopy) && !defined($localCopyPath) && !defined($localCopyDays) && !defined($stopSlave) && !defined($dbName) && !defined($mysqlRootPass) && !defined($mysqlHost) && !defined($mysqlPort) && !defined($verbose) && !defined($ignoreSlaveRunning) && !defined($excludeTable) && !defined($excludeDatabase) && !defined($pigz) && !defined($pigzPath) && !defined($tmpDir) && !defined($keepRemoteCopy) && !defined($remoteCopyDays) && !defined($ftpHost) && !defined($ftpPort) && !defined($ftpUser) && !defined($ftpPass) ) {
 	help();
 	exit(0);
+}
+
+if (!defined($logFile)) {
+	$logFile = $logFileDefault;
 }
 
 if (!defined $dbName) {
