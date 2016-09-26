@@ -381,56 +381,56 @@ if (defined $pigz) {
 	if (!defined $pigzPath){
 		if (!-f $pigzPathDefault) {
 			LogPrint("PIGZ option is turned ON. PIGZ binary not found in $pigzPathDefault. Turn off PIGZ or point PIGZ binary");
-			exit(0);
+			exit(1);
 		} else {
 			$pigzPath = $pigzPathDefault;
 		}
 	} else {
 		if (!-f $pigzPath) {
 			LogPrint("PIGZ option is turned ON. PIGZ binary not found in $pigzPath. Turn off PIGZ or point correct PIGZ binary");
-			exit(0);
+			exit(1);
 		}
 	}
 }
 
 if (!defined($keepLocalCopy) && !defined($keepRemoteCopy)) {
 	LogPrint("You must set destination --local-copy or --remote-copy");
-	exit(0);
+	exit(1);
 }
 
 if (defined $keepLocalCopy && (!defined $localCopyPath || !defined $localCopyDays)) {
 	LogPrint("If you want to use --local-copy, you must define --local-copy-path and --local-copy-days");
-	exit(0);
+	exit(1);
 } else {
 	if ( !-d $localCopyPath ) {
 		LogPrint("Destination does not exist. Try mkdir -p $localCopyPath");
-		exit(0);
+		exit(1);
 	}
 }
 
 if ( defined($remoteCopyDays) && $remoteCopyDays < 1 ) {
 	LogPrint("Value --local-copy-days must be greater or equal to 1");
-	exit(0)
+	exit(1)
 }
 
 if ( defined($localCopyDays) && $localCopyDays < 1 ) {
         LogPrint("Value --local-copy-days must be greater or equal to 1");
-        exit(0)
+        exit(1)
 }
 
 if (!defined $pigz && defined $pigzPath) {
 	LogPrint("Unused option --pigz-path");
-	exit(0);
+	exit(1);
 }
 
 if (defined($keepRemoteCopy) && (!defined($remoteCopyDays) || !defined($ftpHost) || !defined($ftpPort) || !defined($ftpUser) || !defined($ftpPass)) ) {
 	LogPrint("If you want to use ftp storage add --remote-copy --remote-copy-days=<days> --ftp-host=<ip\/host> --ftp-port=<default 21> --ftp-user=<user> --ftp-pass=<pass>");
-	exit(0);
+	exit(1);
 }
 
 if (!defined($keepRemoteCopy) && (defined($remoteCopyDays) || defined($ftpHost) || defined($ftpPort) || defined($ftpUser) || defined($ftpPass)) ) {
         LogPrint("If you want to use ftp storage add --remote-copy --remote-copy-days=<days> --ftp-host=<ip\/host> --ftp-port=<default 21> --ftp-user=<user> --ftp-pass=<pass>");
-        exit(0);
+        exit(1);
 }
 
 if (!defined($ftpPort)) {
@@ -439,15 +439,17 @@ if (!defined($ftpPort)) {
 
 if ( $dbName eq "all" && defined $excludeTable ) {
         LogPrint("You can use --exclude-table if database is defined");
-        exit(0);
+        exit(1);
 }
 
 if (!defined $mysqlRootPass) {
         LogPrint("must provide MySQL root password");
+	exit(1);
 }
 
 if (!-f $mysqlDumpBinary) {
         LogPrint("mysqldump not found $mysqlDumpBinary");
+	exit(1);
 }
 
 if (!defined $tmpDir) {
@@ -464,27 +466,27 @@ if ($localCopyPath=~/(.*)\/$/) {
 
 if (!-d $tmpDir) {
         LogPrint("Directory $tmpDir does not exist");
-        exit(0);
+        exit(1);
 }
 
 if ( $dbName ne "all" && defined $excludeDatabase ) {
         LogPrint("Remove --exclude-database or --database");
-        exit(0);
+        exit(1);
 }
 
 if ( defined $ignoreSlaveRunning && defined $stopSlave ) {
         LogPrint("Unwanted option --ignore-slave-running or --stop-slave");
-        exit(0);
+        exit(1);
 }
 
 if ( !showSlaveStatus() && !defined $ignoreSlaveRunning && !defined $stopSlave ) {
         LogPrint("Slave is RUNNING Exit! You must use --ignore-slave-running or --stop-slave");
-        exit(0);
+        exit(1);
 }
 
 if ( showSlaveStatus() && (defined $ignoreSlaveRunning || defined $stopSlave) ) {
         LogPrint("Slave is NOT RUNNING unwanted option --ignore-slave-running or --stop-slave EXIT!");
-        exit(0);
+        exit(1);
 }
 
 if ( defined $stopSlave ) {
@@ -492,7 +494,7 @@ if ( defined $stopSlave ) {
 	sleep 1;
 	if ( !showSlaveStatus() ) {
 		LogPrint("Slave is running after \"SLAVE STOP\" command. Problem!!!");
-		exit(0);
+		exit(1);
 	}
 }
 
@@ -577,6 +579,6 @@ if ( defined($stopSlave)) {
         sleep 1;
         if ( showSlaveStatus() ) {
                 LogPrint("Slave is NOT running after \"SLAVE START\" command. Problem!!!");
-                exit(0);
+                exit(1);
         }
 }
