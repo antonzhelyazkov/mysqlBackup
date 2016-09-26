@@ -33,6 +33,8 @@ my $ftpPort;
 my $ftpUser;
 my $ftpPass;
 my $logFile;
+my $nagiosXML;
+my $nagiosAlarm;
 
 my $mysqlRootPass;
 my $mysqlHost;
@@ -48,6 +50,7 @@ my $logFileDefault = "/var/log/mysqlBackup.log";
 my $pigzPathDefault = "/bin/pigz";
 my $ftpPortDefault = 21;
 my $localDirectoryName = "mysql";
+my $nagiosXMLDefault = "/usr/local/share/nagios.xml";
 
 my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
 #my $formatted = sprintf "%4u-%02u-%02u %02u:%02u:%02u", $year+1900, $mon+1, $mday, $hour, $min, $sec;
@@ -75,6 +78,8 @@ GetOptions (    "local-copy"		=> \$keepLocalCopy,
 		"ftp-user=s"		=> \$ftpUser,
 		"ftp-pass=s"		=> \$ftpPass,
 		"log-file=s"		=> \$logFile,
+		"nagios-alarm"		=> \$nagiosAlarm,
+		"nagios-alarm-xml=s"	=> \$nagiosXML,
                 "tmpdir=s"              => \$tmpDir)
                 or die("Error in command line arguments\n");
 
@@ -346,6 +351,8 @@ my @showHelpMsg =
                 "--ftp-pass",
                 "--tmpdir",
 		"--log-file",
+		"--nagios-alarm",
+                "--nagios-alarm-xml=s",
 		"",
 		"example: /mysqlBackup.pl --password=<mysql root password> --tmpdir=/tmp/ --exclude-database=vod,c1neterraf1b,bgmedia --stop-slave --local-copy --local-copy-days=1 --local-copy-path=/var/tmp --remote-copy --remote-copy-days=1 --ftp-host=<host/ip> --ftp-port=<port> --ftp-user=<user> --ftp-pass=<password>",
         );
@@ -356,7 +363,7 @@ print join("\n", @showHelpMsg);
 
 ##### Main #####
 
-if ( !defined($keepLocalCopy) && !defined($localCopyPath) && !defined($localCopyDays) && !defined($stopSlave) && !defined($dbName) && !defined($mysqlRootPass) && !defined($mysqlHost) && !defined($mysqlPort) && !defined($verbose) && !defined($ignoreSlaveRunning) && !defined($excludeTable) && !defined($excludeDatabase) && !defined($pigz) && !defined($pigzPath) && !defined($tmpDir) && !defined($keepRemoteCopy) && !defined($remoteCopyDays) && !defined($ftpHost) && !defined($ftpPort) && !defined($ftpUser) && !defined($ftpPass) ) {
+if ( !defined($keepLocalCopy) && !defined($localCopyPath) && !defined($localCopyDays) && !defined($stopSlave) && !defined($dbName) && !defined($mysqlRootPass) && !defined($mysqlHost) && !defined($mysqlPort) && !defined($verbose) && !defined($ignoreSlaveRunning) && !defined($excludeTable) && !defined($excludeDatabase) && !defined($pigz) && !defined($pigzPath) && !defined($tmpDir) && !defined($keepRemoteCopy) && !defined($remoteCopyDays) && !defined($ftpHost) && !defined($ftpPort) && !defined($ftpUser) && !defined($ftpPass) && !defined($nagiosAlarm) && !defined($nagiosXML)) {
 	help();
 	exit(0);
 }
