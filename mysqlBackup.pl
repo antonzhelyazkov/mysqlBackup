@@ -35,6 +35,7 @@ my $ftpPass;
 my $logFile;
 my $nagiosInf;
 my $nagiosAlarm;
+my $mysqlDumpBinary;
 
 my $mysqlRootPass;
 my $mysqlHost;
@@ -45,7 +46,7 @@ my $mysqlHostDefault = "127.0.0.1";
 my $mysqlPortDefault = 3306;
 
 my $tmpDirDefault = "/var/tmp";
-my $mysqlDumpBinary = "/bin/mysqldump";
+my $mysqlDumpBinaryDefault = "/bin/mysqldump";
 my $logFileDefault = "/var/log/mysqlBackup.log";
 my $pigzPathDefault = "/bin/pigz";
 my $ftpPortDefault = 21;
@@ -79,6 +80,7 @@ GetOptions (    "local-copy"		=> \$keepLocalCopy,
 		"log-file=s"		=> \$logFile,
 		"nagios-alarm"		=> \$nagiosAlarm,
 		"nagios-inf-file=s"	=> \$nagiosInf,
+		"mysqldump-binary=s"	=> \$mysqlDumpBinary,
                 "tmpdir=s"              => \$tmpDir)
                 or die("Error in command line arguments\n");
 
@@ -364,6 +366,7 @@ my @showHelpMsg =
 		"--log-file",
 		"--nagios-alarm",
 		"--nagios-inf-file",
+		"--mysqldump-binary",
 		"",
 		"example: /mysqlBackup.pl --password=<mysql root password> --tmpdir=/tmp/ --exclude-database=vod,c1neterraf1b,bgmedia --stop-slave --local-copy --local-copy-days=1 --local-copy-path=/var/tmp --remote-copy --remote-copy-days=1 --ftp-host=<host/ip> --ftp-port=<port> --ftp-user=<user> --ftp-pass=<password>",
         );
@@ -374,7 +377,7 @@ print join("\n", @showHelpMsg);
 
 ##### Main #####
 
-if ( !defined($keepLocalCopy) && !defined($localCopyPath) && !defined($localCopyDays) && !defined($stopSlave) && !defined($dbName) && !defined($mysqlRootPass) && !defined($mysqlHost) && !defined($mysqlPort) && !defined($verbose) && !defined($ignoreSlaveRunning) && !defined($excludeTable) && !defined($excludeDatabase) && !defined($pigz) && !defined($pigzPath) && !defined($tmpDir) && !defined($keepRemoteCopy) && !defined($remoteCopyDays) && !defined($ftpHost) && !defined($ftpPort) && !defined($ftpUser) && !defined($ftpPass) && !defined($nagiosAlarm) && !defined($nagiosInf)) {
+if ( !defined($keepLocalCopy) && !defined($localCopyPath) && !defined($localCopyDays) && !defined($stopSlave) && !defined($dbName) && !defined($mysqlRootPass) && !defined($mysqlHost) && !defined($mysqlPort) && !defined($verbose) && !defined($ignoreSlaveRunning) && !defined($excludeTable) && !defined($excludeDatabase) && !defined($pigz) && !defined($pigzPath) && !defined($tmpDir) && !defined($keepRemoteCopy) && !defined($remoteCopyDays) && !defined($ftpHost) && !defined($ftpPort) && !defined($ftpUser) && !defined($ftpPass) && !defined($nagiosAlarm) && !defined($nagiosInf) && !defined($mysqlDumpBinary)) {
 	help();
 	exit(0);
 }
@@ -483,6 +486,10 @@ if ( $dbName eq "all" && defined $excludeTable ) {
 if (!defined $mysqlRootPass) {
         LogPrint("must provide MySQL root password");
 	exit(1);
+}
+
+if (!defined($mysqlDumpBinary)){
+	$mysqlDumpBinary = $mysqlDumpBinaryDefault;
 }
 
 if (!-f $mysqlDumpBinary) {
