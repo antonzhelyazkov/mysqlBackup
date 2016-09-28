@@ -101,7 +101,7 @@ close LOG;
 
 if (defined($nagiosAlarm) && defined($nagiosAlert)){
 	if (open (INF, ">>$nagiosInf")) {
-		print INF " $message\n";
+		print INF "$message\n";
 		close INF;
 	} else {
 		open (LOG, ">>$logFile");
@@ -188,7 +188,7 @@ if (!$results || $results->{"Slave_SQL_Running"} ne 'Yes') {
 }
 
 if ($results->{"Slave_SQL_Running"} eq 'Yes') {
-        LogPrint("Slave SQL thread is RUNNIG");
+        LogPrint("OK Slave SQL thread is RUNNIG", 1);
         return 0;
 }
 
@@ -625,7 +625,7 @@ if ( defined($stopSlave)) {
         startSlave();
         sleep 1;
         if ( showSlaveStatus() ) {
-                LogPrint("Slave is NOT running after \"SLAVE START\" command. Problem!!!");
+                LogPrint("Error Slave is NOT running after \"SLAVE START\" command. Problem!!!", 1);
                 exit(1);
         }
 }
