@@ -33,7 +33,7 @@ my $ftpPort;
 my $ftpUser;
 my $ftpPass;
 my $logFile;
-my $nagiosXML;
+my $nagiosInf;
 my $nagiosAlarm;
 
 my $mysqlRootPass;
@@ -50,10 +50,9 @@ my $logFileDefault = "/var/log/mysqlBackup.log";
 my $pigzPathDefault = "/bin/pigz";
 my $ftpPortDefault = 21;
 my $localDirectoryName = "mysql";
-my $nagiosXMLDefault = "/usr/local/share/nagios.xml";
+my $nagiosInfDefault = "/usr/local/share/nagios.inf";
 
 my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
-#my $formatted = sprintf "%4u-%02u-%02u %02u:%02u:%02u", $year+1900, $mon+1, $mday, $hour, $min, $sec;
 my $dateStamp = sprintf "%4u-%02u-%02u", $year+1900, $mon+1, $mday;
 my $hourStamp = sprintf "%02u-%02u", $hour, $min;
 
@@ -79,14 +78,16 @@ GetOptions (    "local-copy"		=> \$keepLocalCopy,
 		"ftp-pass=s"		=> \$ftpPass,
 		"log-file=s"		=> \$logFile,
 		"nagios-alarm"		=> \$nagiosAlarm,
-		"nagios-alarm-xml=s"	=> \$nagiosXML,
+		"nagios-inf-file=s"	=> \$nagiosInf,
                 "tmpdir=s"              => \$tmpDir)
                 or die("Error in command line arguments\n");
 
 ##### functions #####
 
 sub LogPrint {
+
 my $message = shift;
+my $nagiosAlert = shift;
 
 if ( $verbose == 1 ) {
         print "$message\n";
@@ -96,6 +97,16 @@ open (LOG, ">>$logFile") or die "Could not open file '$logFile' $!";;
 print LOG localtime()." $message\n";
 close LOG;
 
+if (defined($nagiosAlarm) && defined($nagiosAlert)){
+	if (open (INF, ">>$nagiosInf")) {
+		print INF " $message\n";
+		close INF;
+	} else {
+		open (LOG, ">>$logFile");
+		print LOG localtime()."Could not open $nagiosInf";
+		close LOG;
+	}
+}
 }
 
 sub showDatabases {
@@ -235,9 +246,9 @@ if ( -d "$localCopyPath\/$localDirectoryName" ) {
 		next if (scalar((stat("$localCopyPath\/$localDirectoryName\/$f"))[9]) > $deleteTime);
 		rmtree("$localCopyPath\/$localDirectoryName\/$f");
 		if (-d "$localCopyPath\/$localDirectoryName\/$f") {
-			LogPrint("Could not remove directory $localCopyPath\/$localDirectoryName\/$f");
+			LogPrint("Error Could not remove directory $localCopyPath\/$localDirectoryName\/$f", 1);
 		} else {
-			LogPrint("Directory $localCopyPath\/$localDirectoryName\/$f deleted");
+			LogPrint("OK Directory $localCopyPath\/$localDirectoryName\/$f deleted", 1);
 		}
 	}
 }
@@ -263,9 +274,9 @@ for my $dir (@dirs) {
 		LogPrint("Removing Directory $dir");
 		$ftp->rmdir($dir, 1);
 		if ($ftp->cwd($dir)) {
-			LogPrint("Remove directory failed $dir");
+			LogPrint("Error Remove directory failed $dir", 1);
 		} else {
-			LogPrint("Directory $dir successfully removed");
+			LogPrint("OK Directory $dir successfully removed", 1);
 		}
 	}
 }
@@ -303,13 +314,13 @@ if ( $ftp ) {
 	$ftp->put( "$tmpDir$tmpFile", "$ftpDir5$tmpFile" ) or return "Error in transfer $tmpFile", $ftp->message;
 
 	if ( $ftp->size("$ftpDir5$tmpFile") == (-s "$tmpDir$tmpFile") ) {
-		LogPrint("ftp transfer to $ftpHost is successful");
+		LogPrint("OK ftp transfer to $ftpHost is successful", 1);
 	} else {
-		LogPrint("ftp transfer to $ftpHost FAILED");
+		LogPrint("Error ftp transfer to $ftpHost FAILED", 1);
 	}
 	$ftp->close();
 } else {
-	LogPrint("ftp connection to $ftpHost NOT established");
+	LogPrint("Error ftp connection to $ftpHost NOT established", 1);
 }
 }
 
@@ -352,7 +363,7 @@ my @showHelpMsg =
                 "--tmpdir",
 		"--log-file",
 		"--nagios-alarm",
-                "--nagios-alarm-xml=s",
+		"--nagios-inf-file",
 		"",
 		"example: /mysqlBackup.pl --password=<mysql root password> --tmpdir=/tmp/ --exclude-database=vod,c1neterraf1b,bgmedia --stop-slave --local-copy --local-copy-days=1 --local-copy-path=/var/tmp --remote-copy --remote-copy-days=1 --ftp-host=<host/ip> --ftp-port=<port> --ftp-user=<user> --ftp-pass=<password>",
         );
@@ -363,9 +374,29 @@ print join("\n", @showHelpMsg);
 
 ##### Main #####
 
-if ( !defined($keepLocalCopy) && !defined($localCopyPath) && !defined($localCopyDays) && !defined($stopSlave) && !defined($dbName) && !defined($mysqlRootPass) && !defined($mysqlHost) && !defined($mysqlPort) && !defined($verbose) && !defined($ignoreSlaveRunning) && !defined($excludeTable) && !defined($excludeDatabase) && !defined($pigz) && !defined($pigzPath) && !defined($tmpDir) && !defined($keepRemoteCopy) && !defined($remoteCopyDays) && !defined($ftpHost) && !defined($ftpPort) && !defined($ftpUser) && !defined($ftpPass) && !defined($nagiosAlarm) && !defined($nagiosXML)) {
+if ( !defined($keepLocalCopy) && !defined($localCopyPath) && !defined($localCopyDays) && !defined($stopSlave) && !defined($dbName) && !defined($mysqlRootPass) && !defined($mysqlHost) && !defined($mysqlPort) && !defined($verbose) && !defined($ignoreSlaveRunning) && !defined($excludeTable) && !defined($excludeDatabase) && !defined($pigz) && !defined($pigzPath) && !defined($tmpDir) && !defined($keepRemoteCopy) && !defined($remoteCopyDays) && !defined($ftpHost) && !defined($ftpPort) && !defined($ftpUser) && !defined($ftpPass) && !defined($nagiosAlarm) && !defined($nagiosInf)) {
 	help();
 	exit(0);
+}
+
+if (defined($nagiosInf) && !defined($nagiosAlarm)) {
+	LogPrint("You must add --nagios-inf-file");
+	exit(0);
+}
+
+if (defined($nagiosAlarm) && !defined($nagiosInf)) {
+	$nagiosInf = $nagiosInfDefault;
+}
+
+if (defined($nagiosAlarm)){
+	if ( open(INF, '>', $nagiosInf) ){
+		print INF $$."\n";
+		print INF time()."\n";
+		close INF;
+	} else {
+		LogPrint("Could not write to $nagiosInf");
+		exit(1);
+	}
 }
 
 if (!defined($logFile)) {
@@ -502,6 +533,8 @@ if ( defined $stopSlave ) {
 	if ( !showSlaveStatus() ) {
 		LogPrint("Slave is running after \"SLAVE STOP\" command. Problem!!!");
 		exit(1);
+	} else {
+		LogPrint("OK Slave stopped", 1);
 	}
 }
 
@@ -517,7 +550,7 @@ if ( $dbName eq "all" ) {
 				#print "$pigzCommand\n";
 				system($pigzCommand);
 				if (defined($keepLocalCopy)) {
-					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error in $db $table.sql.gz");
+					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error in $db $table.sql.gz", 1);
 				}
 				if (defined($keepRemoteCopy)) {
 					ftpTransfer("$tmpDir/$table.sql.gz", $db);
@@ -529,7 +562,7 @@ if ( $dbName eq "all" ) {
 				system($mysqldumpCommand);
 				gzip "$tmpDir/$table.sql" => "$tmpDir/$table.sql.gz" or die "gzip failed: $GzipError\n";
 				if (defined($keepLocalCopy)) {
-					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error in $db $table.sql.gz");
+					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error in $db $table.sql.gz", 1);
 				}
 				if (defined($keepRemoteCopy)) {
                                         ftpTransfer("$tmpDir/$table.sql.gz", $db);
@@ -550,7 +583,7 @@ if ( $dbName eq "all" ) {
 			#print "$pigzCommand\n";
 			system($pigzCommand);
 			if (defined($keepLocalCopy)) {
-				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error in $dbName $table.sql.gz");
+				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error in $dbName $table.sql.gz", 1);
 			}
 			if (defined($keepRemoteCopy)) {
                         	ftpTransfer("$tmpDir/$table.sql.gz", $dbName);
@@ -562,7 +595,7 @@ if ( $dbName eq "all" ) {
 			system($mysqldumpCommand);
 			gzip "$tmpDir/$table.sql" => "$tmpDir/$table.sql.gz" or die "gzip failed: $GzipError\n";
 			if (defined($keepLocalCopy)) {
-				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error in $dbName $table.sql.gz");
+				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error in $dbName $table.sql.gz", 1);
 			}
 			if (defined($keepRemoteCopy)) {
                                 ftpTransfer("$tmpDir/$table.sql.gz", $dbName);
@@ -588,4 +621,10 @@ if ( defined($stopSlave)) {
                 LogPrint("Slave is NOT running after \"SLAVE START\" command. Problem!!!");
                 exit(1);
         }
+}
+
+if (defined($nagiosAlarm)){
+	open(INF, '>>', $nagiosInf);
+	print INF time()."\n";
+        close INF;
 }
