@@ -393,8 +393,8 @@ if (defined($nagiosAlarm) && !defined($nagiosInf)) {
 
 if (defined($nagiosAlarm)){
 	if ( open(INF, '>', $nagiosInf) ){
-		print INF $$."\n";
-		print INF time()."\n";
+		print INF "PID ".$$."\n";
+		print INF "startTime ".time()."\n";
 		close INF;
 	} else {
 		LogPrint("Could not write to $nagiosInf");
@@ -493,7 +493,7 @@ if (!defined($mysqlDumpBinary)){
 }
 
 if (!-f $mysqlDumpBinary) {
-        LogPrint("mysqldump not found $mysqlDumpBinary");
+        LogPrint("mysqldump not found $mysqlDumpBinary try --mysqldump-binary=/path/to/mysqldump");
 	exit(1);
 }
 
@@ -632,6 +632,6 @@ if ( defined($stopSlave)) {
 
 if (defined($nagiosAlarm)){
 	open(INF, '>>', $nagiosInf);
-	print INF time()."\n";
+	print INF "endTime ".time()."\n";
         close INF;
 }
