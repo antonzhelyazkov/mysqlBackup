@@ -50,6 +50,7 @@ my $mysqlDumpBinaryDefault = "/bin/mysqldump";
 my $mysqlDumpBinaryDefaultUSR = "/usr/bin/mysqldump";
 my $logFileDefault = "/var/log/mysqlBackup.log";
 my $pigzPathDefault = "/bin/pigz";
+my $pigzPathDefaultUSR = "/usr/bin/pigz";
 my $ftpPortDefault = 21;
 my $localDirectoryName = "mysql";
 my $nagiosInfDefault = "/usr/local/share/nagios.inf";
@@ -421,11 +422,13 @@ if (!defined $mysqlPort) {
 
 if (defined $pigz) {
 	if (!defined $pigzPath){
-		if (!-f $pigzPathDefault) {
-			LogPrint("PIGZ option is turned ON. PIGZ binary not found in $pigzPathDefault. Turn off PIGZ or point PIGZ binary");
-			exit(1);
-		} else {
+		if ( -f $pigzPathDefault) {
 			$pigzPath = $pigzPathDefault;
+		} elsif ( -f $pigzPathDefaultUSR) {
+                        $pigzPath = $pigzPathDefaultUSR;
+                } else {
+			LogPrint("PIGZ option is turned ON. PIGZ binary not found in $pigzPathDefault. Turn off PIGZ or point PIGZ binary");
+                        exit(1);
 		}
 	} else {
 		if (!-f $pigzPath) {
