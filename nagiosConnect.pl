@@ -85,5 +85,5 @@ if ( $errorCounter > 0 ) {
 } else {
 	my $endTime = $infLines[$lastLinesElementNumber - 1];
 	$endTime =~ s/endTime\s//;
-	print "OK backup finishad successfuly at ".scalar localtime $endTime."\n";
+	print "OK backup finished successfuly at ".scalar localtime $endTime."\n";
 }
