@@ -82,4 +82,8 @@ for ( my $i = 2; $i < scalar(@infLines) - 2; $i++ ) {
 if ( $errorCounter > 0 ) {
 	print "WARNING finished with $errorCounter errors. Possible backup problem!\n";
         exit(1);
+} else {
+	my $endTime = $infLines[$lastLinesElementNumber - 1];
+	$endTime =~ s/endTime\s//;
+	print "OK backup finishad successfuly at ".scalar localtime $endTime."\n";
 }

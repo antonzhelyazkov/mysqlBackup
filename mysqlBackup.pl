@@ -565,7 +565,7 @@ if ( $dbName eq "all" ) {
 				#print "$pigzCommand\n";
 				system($pigzCommand);
 				if (defined($keepLocalCopy)) {
-					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error in $db $table.sql.gz", 1);
+					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error local copy failed $db $table.sql.gz", 1);
 				}
 				if (defined($keepRemoteCopy)) {
 					ftpTransfer("$tmpDir/$table.sql.gz", $db);
@@ -577,7 +577,7 @@ if ( $dbName eq "all" ) {
 				system($mysqldumpCommand);
 				gzip "$tmpDir/$table.sql" => "$tmpDir/$table.sql.gz" or die "gzip failed: $GzipError\n";
 				if (defined($keepLocalCopy)) {
-					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error in $db $table.sql.gz", 1);
+					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error local copy failed $db $table.sql.gz", 1);
 				}
 				if (defined($keepRemoteCopy)) {
                                         ftpTransfer("$tmpDir/$table.sql.gz", $db);
@@ -598,7 +598,7 @@ if ( $dbName eq "all" ) {
 			#print "$pigzCommand\n";
 			system($pigzCommand);
 			if (defined($keepLocalCopy)) {
-				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error in $dbName $table.sql.gz", 1);
+				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error local copy failed $dbName $table.sql.gz", 1);
 			}
 			if (defined($keepRemoteCopy)) {
                         	ftpTransfer("$tmpDir/$table.sql.gz", $dbName);
@@ -610,7 +610,7 @@ if ( $dbName eq "all" ) {
 			system($mysqldumpCommand);
 			gzip "$tmpDir/$table.sql" => "$tmpDir/$table.sql.gz" or die "gzip failed: $GzipError\n";
 			if (defined($keepLocalCopy)) {
-				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error in $dbName $table.sql.gz", 1);
+				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error local copy failed $dbName $table.sql.gz", 1);
 			}
 			if (defined($keepRemoteCopy)) {
                                 ftpTransfer("$tmpDir/$table.sql.gz", $dbName);
