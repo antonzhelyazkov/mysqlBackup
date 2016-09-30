@@ -69,7 +69,7 @@ if (defined($cronInterval)){
 }
 
 if ($infLines[$lastLinesElementNumber - 1] !~ m/endTime\s\d+/ && $found == 0 ) {
-	print "WARNING no end timestamp in $infFile and running process $process. Possible backup problem!\n";
+	print "WARNING no end timestamp in $infFile and NO running process $process. Possible backup problem!\n";
 	exit(1);
 }
 
