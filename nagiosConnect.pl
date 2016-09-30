@@ -5,51 +5,69 @@ use warnings;
 use Getopt::Long;
 use Proc::ProcessTable;
 
-my $pidFile;
 my $pidNumber;
 my $process;
 my $ref = new Proc::ProcessTable;
+my $infFileDefault = "/usr/local/share/nagios.inf";
 my $found = 0;
+my $infFile;
+my $processDefault = "mysqlBackup.pl";
+my @infLines;
+my $lastLinesElementNumber;
 
-GetOptions (    "pid-file=s"    => \$pidFile,
+GetOptions (    "inf-file=s"    => \$infFile,
                 "process=s"     => \$process) or exit(2);
 
-if (!defined($process) || !defined($pidFile)) {
-        print "CRITICAL Usage --pid-file=/path/to/file.pid --process\'<CMD>\'\n";
-        exit(2);
-        }
+if (!defined($infFile)) {
+	$infFile = $infFileDefault;
+}
 
-if (open(PID, '<:encoding(UTF-8)', $pidFile)) {
-        while (my $row = <PID>) {
-                chomp $row;
-                $pidNumber = $row;
-        }
+if (!-f $infFile) {
+	print "CRITICAL INF File $infFile not found\n";
+	exit(2);
+}
+
+if (!defined($process)) {
+        $process = $processDefault;
+}
+
+if (open(INF, '<:encoding(UTF-8)', $infFile)) {
+	@infLines = <INF>;
+	close INF;
 } else {
-        if ( !-f $pidFile ) {
-                print "OK file $pidFile does not exist | status=0";
-                exit(0);
-        } else {
-                print "CRITICAL Could not open file '$pidFile' $!";
-                exit(2);
-        }
+	print "CRITICAL Could not open file '$infFile' $!";
+	exit(2);
 }
 
-close PID;
+$infLines[0] =~ s/PID\s//;
+$pidNumber = $infLines[0];
+$lastLinesElementNumber = scalar(@infLines);
 
-if ( -e $pidFile ) {
-        foreach my $proc (@{$ref->table}) {
-                if ( $pidNumber == $proc->{pid} && $process eq $proc->{cmndline} ){
-                        $found = 1;
-                        print "OK file $pidFile exists and process $proc->{cmndline} with ID $proc->{pid} is running | status=1";
-                        exit(0);
-                }
-        }
-} else {
-        print "OK file $pidFile does not exists | status=0";
-        exit(0);
+foreach my $proc (@{$ref->table}) {
+	if ( $pidNumber == $proc->{pid} && $proc->{cmndline} =~ m/$process/){
+		print $proc->{pid};
+		print $proc->{cmndline} ."\n";
+		$found = 1;
+		print "OK file $infFile exists and process $proc->{cmndline} with ID $proc->{pid} is running | status=1";
+		exit(0);
+	}
 }
 
-if ( !$found ) {
-        print "WARNING file $pidFile exists but no process $process with ID $pidNumber is running | status=2";
-        exit(1);
+if ($infLines[$lastLinesElementNumber - 1] !~ m/endTime\s\d+/ && $found == 0 ) {
+	print "WARNING no end timestamp in $infFile and running process $process. Possible backup problem!| status=2\n";
+	exit(1);
 }
+
+for ( my $i = 2; $i < scalar(@infLines) - 2; $i++ ) {
+	print $infLines[$i];
+}
+
+#} else {
+#        print "OK file $pidFile does not exists | status=0";
+#        exit(0);
+#}
+#
+#if ( !$found ) {
+#        print "WARNING file $pidFile exists but no process $process with ID $pidNumber is running | status=2";
+#        exit(1);
+#}

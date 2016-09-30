@@ -47,6 +47,7 @@ my $mysqlPortDefault = 3306;
 
 my $tmpDirDefault = "/var/tmp";
 my $mysqlDumpBinaryDefault = "/bin/mysqldump";
+my $mysqlDumpBinaryDefaultUSR = "/usr/bin/mysqldump";
 my $logFileDefault = "/var/log/mysqlBackup.log";
 my $pigzPathDefault = "/bin/pigz";
 my $ftpPortDefault = 21;
@@ -493,8 +494,12 @@ if (!defined($mysqlDumpBinary)){
 }
 
 if (!-f $mysqlDumpBinary) {
+	$mysqlDumpBinary = $mysqlDumpBinaryDefaultUSR;
+}
+
+if (!-f $mysqlDumpBinary) {
         LogPrint("mysqldump not found $mysqlDumpBinary try --mysqldump-binary=/path/to/mysqldump");
-	exit(1);
+        exit(1);
 }
 
 if (!defined $tmpDir) {
