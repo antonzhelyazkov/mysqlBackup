@@ -63,13 +63,13 @@ foreach my $proc (@{$ref->table}) {
 if (defined($cronInterval)){
 	my $cronIntervalSeconds = $cronInterval * 3600;
 	if (time() > ($cronIntervalSeconds + $startTime + $cronTimeBuffer)) {
-		print "WARNING backup has not started more than ".($cronInterval + $cronTimeBuffer / 3600)." hours Possible backup problem!\n";
+		print "WARNING backup has not started more than ".($cronInterval + $cronTimeBuffer / 3600)." hours Possible backup problem! | status=0";
 		exit(1);
 	}
 }
 
 if ($infLines[$lastLinesElementNumber - 1] !~ m/endTime\s\d+/ && $found == 0 ) {
-	print "WARNING no end timestamp in $infFile and NO running process $process. Possible backup problem!\n";
+	print "WARNING no end timestamp in $infFile and NO running process $process. Possible backup problem! | status=0";
 	exit(1);
 }
 
@@ -80,10 +80,10 @@ for ( my $i = 2; $i < scalar(@infLines) - 2; $i++ ) {
 }
 
 if ( $errorCounter > 0 ) {
-	print "WARNING finished with $errorCounter errors. Possible backup problem!\n";
+	print "WARNING finished with $errorCounter errors. Possible backup problem! | status=0";
         exit(1);
 } else {
 	my $endTime = $infLines[$lastLinesElementNumber - 1];
 	$endTime =~ s/endTime\s//;
-	print "OK backup finished successfuly at ".scalar localtime $endTime."\n";
+	print "OK backup finished successfuly at ".scalar localtime $endTime." | status=0";
 }
