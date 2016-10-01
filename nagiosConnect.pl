@@ -28,8 +28,8 @@ if (!defined($infFile)) {
 }
 
 if (!-f $infFile) {
-	print "CRITICAL INF File $infFile not found\n";
-	exit(2);
+	print "WARNING INF File $infFile not found | status=0";
+	exit(1);
 }
 
 if (!defined($process)) {
@@ -40,8 +40,8 @@ if (open(INF, '<:encoding(UTF-8)', $infFile)) {
 	@infLines = <INF>;
 	close INF;
 } else {
-	print "CRITICAL Could not open file '$infFile' $!";
-	exit(2);
+	print "CRITICAL Could not open file '$infFile' $! | status=0";
+	exit(1);
 }
 
 $infLines[0] =~ s/PID\s//;
