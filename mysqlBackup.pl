@@ -446,11 +446,6 @@ if (!defined($keepLocalCopy) && !defined($keepRemoteCopy)) {
 if (defined $keepLocalCopy && (!defined $localCopyPath || !defined $localCopyDays)) {
 	LogPrint("If you want to use --local-copy, you must define --local-copy-path and --local-copy-days");
 	exit(1);
-} else {
-	if ( !-d $localCopyPath ) {
-		LogPrint("Destination does not exist. Try mkdir -p $localCopyPath");
-		exit(1);
-	}
 }
 
 if ( defined($remoteCopyDays) && $remoteCopyDays < 1 ) {
