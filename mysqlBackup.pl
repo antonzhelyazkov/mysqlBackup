@@ -54,6 +54,7 @@ my $pigzPathDefaultUSR = "/usr/bin/pigz";
 my $ftpPortDefault = 21;
 my $localDirectoryName = "mysql";
 my $nagiosInfDefault = "/usr/local/share/nagios.inf";
+my $sleepTimeout = 1;
 
 my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
 my $dateStamp = sprintf "%4u-%02u-%02u", $year+1900, $mon+1, $mday;
@@ -564,6 +565,7 @@ if ( $dbName eq "all" ) {
 				}
 				if (defined($keepRemoteCopy)) {
 					ftpTransfer("$tmpDir/$table.sql.gz", $db);
+					sleep $sleepTimeout;
 				}
 				unlink("$tmpDir/$table.sql.gz");
 			} else {
@@ -576,6 +578,7 @@ if ( $dbName eq "all" ) {
 				}
 				if (defined($keepRemoteCopy)) {
                                         ftpTransfer("$tmpDir/$table.sql.gz", $db);
+					sleep $sleepTimeout;
                                 }
 				unlink("$tmpDir/$table.sql");
 				unlink("$tmpDir/$table.sql.gz");
@@ -597,6 +600,7 @@ if ( $dbName eq "all" ) {
 			}
 			if (defined($keepRemoteCopy)) {
                         	ftpTransfer("$tmpDir/$table.sql.gz", $dbName);
+				sleep $sleepTimeout;
                         }
 			unlink("$tmpDir/$table.sql.gz");
 		} else {
@@ -609,6 +613,7 @@ if ( $dbName eq "all" ) {
 			}
 			if (defined($keepRemoteCopy)) {
                                 ftpTransfer("$tmpDir/$table.sql.gz", $dbName);
+				sleep $sleepTimeout;
                         }
 			unlink("$tmpDir/$table.sql");
 			unlink("$tmpDir/$table.sql.gz");
