@@ -54,6 +54,7 @@ my $pigzPathDefaultUSR = "/usr/bin/pigz";
 my $ftpPortDefault = 21;
 my $localDirectoryName = "mysql";
 my $nagiosInfDefault = "/usr/local/share/nagios.inf";
+my $pidFile = "/var/run/mysqlBackup.pid";
 my $sleepTimeout = 1;
 
 my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
@@ -269,6 +270,7 @@ my $deleteTime = time() - ($remoteCopyDays * 86400);
 
 my $ftp = Net::FTP->new( "$ftpHost", Port => "$ftpPort", Debug => 0, Timeout => 2 );
 $ftp->login( $ftpUser, $ftpPass ) or return "Cannot login ", $ftp->message;
+$ftp->binary();
 my @dirs = $ftp->ls("$ftpDir1\/$localDirectoryName");
 
 for my $dir (@dirs) {
