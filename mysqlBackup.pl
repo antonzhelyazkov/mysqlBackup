@@ -55,7 +55,8 @@ my $ftpPortDefault = 21;
 my $localDirectoryName = "mysql";
 my $nagiosInfDefault = "/usr/local/share/nagios.inf";
 my $pidFile = "/var/run/mysqlBackup.pid";
-my $sleepTimeout = 1;
+my $curlBin = "/usr/bin/curl";
+my $sleepTimeout = 0;
 
 my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
 my $dateStamp = sprintf "%4u-%02u-%02u", $year+1900, $mon+1, $mday;
@@ -291,7 +292,7 @@ for my $dir (@dirs) {
 $ftp->close();
 }
 
-sub ftpTransfer {
+sub curlTransfer {
 
 my $tmpFile = shift;
 my $hostname =  hostname;
@@ -299,36 +300,16 @@ my @hostname = split('\.', $hostname);
 my $ftpDir1 = $hostname[0];
 my $database = shift;
 
-$tmpFile =~ s/$tmpDir//;
+my $curlCreateDirCommand = "$curlBin -s --ftp-create-dirs -T $tmpFile -u $ftpUser\:$ftpPass ftp\:\/\/$ftpHost\/$ftpDir1\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database --ftp-create-dirs";
+system($curlCreateDirCommand);
+my $curlExitStatus=$?;
 
-my $ftpDir2 = "$ftpDir1\/$localDirectoryName";
-my $ftpDir3 = "$ftpDir1\/$localDirectoryName\/$dateStamp";
-my $ftpDir4 = "$ftpDir1\/$localDirectoryName\/$dateStamp\/$hourStamp";
-my $ftpDir5 = "$ftpDir1\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database";
-
-my $ftp = Net::FTP->new( "$ftpHost", Port => "$ftpPort", Debug => 0, Timeout => 2 );
-
-if ( $ftp ) {
-	LogPrint("ftp connection to $ftpHost established");
-	$ftp->login( $ftpUser, $ftpPass ) or return "Cannot login ", $ftp->message;
-	$ftp->binary();
-	$ftp->mkdir($ftpDir1);
-	$ftp->mkdir($ftpDir2);
-	$ftp->mkdir($ftpDir3);
-	$ftp->mkdir($ftpDir4);
-	$ftp->mkdir($ftpDir5);
-	LogPrint("FTP Transfer $tmpFile, $ftpDir5$tmpFile");
-	$ftp->put( "$tmpDir$tmpFile", "$ftpDir5$tmpFile" ) or return "Error in transfer $tmpFile", $ftp->message;
-
-	if ( $ftp->size("$ftpDir5$tmpFile") == (-s "$tmpDir$tmpFile") ) {
-		LogPrint("OK ftp transfer to $ftpHost is successful", 1);
-	} else {
-		LogPrint("Error ftp transfer to $ftpHost FAILED", 1);
-	}
-	$ftp->close();
+if ( $curlExitStatus == 0 ) {
+	LogPrint("OK ftp transfer to $ftpHost is successful", 1);
 } else {
-	LogPrint("Error ftp connection to $ftpHost NOT established", 1);
+	LogPrint("Error ftp transfer to $ftpHost FAILED", 1);
 }
+
 }
 
 sub dateToEpoch {
@@ -503,6 +484,11 @@ if (!-f $mysqlDumpBinary) {
         exit(1);
 }
 
+if ( !-e $curlBin) {
+	LogPrint("binary $curlBin does not exist");
+	exit(1);
+}
+
 if (!defined $tmpDir) {
         $tmpDir = $tmpDirDefault;
 }
@@ -566,7 +552,7 @@ if ( $dbName eq "all" ) {
 					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error local copy failed $db $table.sql.gz", 1);
 				}
 				if (defined($keepRemoteCopy)) {
-					ftpTransfer("$tmpDir/$table.sql.gz", $db);
+					curlTransfer("$tmpDir/$table.sql.gz", $db);
 					sleep $sleepTimeout;
 				}
 				unlink("$tmpDir/$table.sql.gz");
@@ -579,7 +565,7 @@ if ( $dbName eq "all" ) {
 					copy("$tmpDir/$table.sql.gz",createLocalDirectory($db)) or LogPrint("Error local copy failed $db $table.sql.gz", 1);
 				}
 				if (defined($keepRemoteCopy)) {
-                                        ftpTransfer("$tmpDir/$table.sql.gz", $db);
+                                        curlTransfer("$tmpDir/$table.sql.gz", $db);
 					sleep $sleepTimeout;
                                 }
 				unlink("$tmpDir/$table.sql");
@@ -601,7 +587,7 @@ if ( $dbName eq "all" ) {
 				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error local copy failed $dbName $table.sql.gz", 1);
 			}
 			if (defined($keepRemoteCopy)) {
-                        	ftpTransfer("$tmpDir/$table.sql.gz", $dbName);
+                        	curlTransfer("$tmpDir/$table.sql.gz", $dbName);
 				sleep $sleepTimeout;
                         }
 			unlink("$tmpDir/$table.sql.gz");
@@ -614,7 +600,7 @@ if ( $dbName eq "all" ) {
 				copy("$tmpDir/$table.sql.gz",createLocalDirectory($dbName)) or LogPrint("Error local copy failed $dbName $table.sql.gz", 1);
 			}
 			if (defined($keepRemoteCopy)) {
-                                ftpTransfer("$tmpDir/$table.sql.gz", $dbName);
+                                curlTransfer("$tmpDir/$table.sql.gz", $dbName);
 				sleep $sleepTimeout;
                         }
 			unlink("$tmpDir/$table.sql");
@@ -645,5 +631,3 @@ if (defined($nagiosAlarm)){
 	print INF "endTime ".time()."\n";
         close INF;
 }
-
-# test
