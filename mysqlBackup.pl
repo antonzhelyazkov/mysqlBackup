@@ -300,7 +300,7 @@ my @hostname = split('\.', $hostname);
 my $ftpDir1 = $hostname[0];
 my $database = shift;
 
-my $curlCreateDirCommand = "$curlBin -s --ftp-create-dirs -T $tmpFile -u $ftpUser\:$ftpPass ftp\:\/\/$ftpHost\/$ftpDir1\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database --ftp-create-dirs";
+my $curlCreateDirCommand = "$curlBin -s --ftp-create-dirs -T $tmpFile -u $ftpUser\:$ftpPass ftp\:\/\/$ftpHost\/$ftpDir1\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database/ --ftp-create-dirs";
 system($curlCreateDirCommand);
 my $curlExitStatus=$?;
 
