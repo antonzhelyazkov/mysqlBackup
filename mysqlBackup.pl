@@ -645,3 +645,5 @@ if (defined($nagiosAlarm)){
 	print INF "endTime ".time()."\n";
         close INF;
 }
+
+# test
