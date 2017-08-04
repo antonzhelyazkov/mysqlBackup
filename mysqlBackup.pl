@@ -275,6 +275,7 @@ my @dirs = `$curlCommand`;
 
 foreach my $dir (@dirs) {
         chomp $dir;
+	next if $dir !~ m/\d{4}\-\d+\-\d+/;
         $timeCode = $dir;
 #        print $deleteTime." ".dateToEpoch($timeCode)."\n";
         if (dateToEpoch($timeCode) < $deleteTime) {
