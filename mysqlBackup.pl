@@ -277,15 +277,12 @@ foreach my $dir (@dirs) {
         chomp $dir;
 	next if $dir !~ m/\d{4}\-\d+\-\d+/;
         $timeCode = $dir;
-#        print $deleteTime." ".dateToEpoch($timeCode)."\n";
         if (dateToEpoch($timeCode) < $deleteTime) {
                 my $curlCommandSubdir = "curl -s -l ftp://$ftpHost/$ftpDir1/$localDirectoryName/$timeCode/ --user $ftpUser:$ftpPass";
-#                print $curlCommandSubdir . "\n";
                 my @subDirs = `$curlCommandSubdir`;
                 foreach my $subDir (@subDirs) {
                         chomp $subDir;
                         my $curlListDatabasesDirs = "curl -s -l ftp://$ftpHost/$ftpDir1/$localDirectoryName/$timeCode/$subDir/ --user $ftpUser:$ftpPass";
-#                        print $curlListDatabasesDirs . "\n";
                         my @listDatabases = `$curlListDatabasesDirs`;
                         foreach my $database (@listDatabases) {
                                 chomp $database;
@@ -294,17 +291,40 @@ foreach my $dir (@dirs) {
                                 foreach my $databaseTable (@listTables) {
                                         chomp $databaseTable;
                                         my $curlRemoveTable = "curl -s --user $ftpUser:$ftpPass ftp://$ftpHost -Q \"DELE $ftpDir1/$localDirectoryName/$timeCode/$subDir/$database/$databaseTable\"";
-#                                        print $curlRemoveTable . "\n";
                                         system($curlRemoveTable);
+					my $curlExitStatusRemoveTable=$?;
+					if ( $curlExitStatusRemoveTable == 0 ) {
+						LogPrint("OK curl remove file $ftpDir1/$localDirectoryName/$timeCode/$subDir/$database/$databaseTable is successful", 1);
+					} else {
+						LogPrint("Error curl remove file $ftpDir1/$localDirectoryName/$timeCode/$subDir/$database/$databaseTable FAILED", 1);
+					}
                                 }
                                 my $curlRemoveDatabaseDir = "curl -s --user $ftpUser:$ftpPass ftp://$ftpHost -Q \"RMD $ftpDir1/$localDirectoryName/$timeCode/$subDir/$database/\"";
                                 system($curlRemoveDatabaseDir);
+				my $curlExitStatusDatabaseDir=$?;
+				if ( $curlExitStatusDatabaseDir == 0 ) {
+                                	LogPrint("OK curl remove directory $ftpDir1/$localDirectoryName/$timeCode/$subDir/$database/ is successful", 1);
+				} else {
+					LogPrint("Error curl remove directory $ftpDir1/$localDirectoryName/$timeCode/$subDir/$database/ FAILED", 1);
+				}
                         }
                         my $curlRemoveHourDir = "curl -s --user $ftpUser:$ftpPass ftp://$ftpHost -Q \"RMD $ftpDir1/$localDirectoryName/$timeCode/$subDir/\"";
                         system($curlRemoveHourDir);
+			my $curlExitStatusHourDir=$?;
+			if ( $curlExitStatusHourDir == 0 ) {
+				LogPrint("OK curl remove directory $ftpDir1/$localDirectoryName/$timeCode/$subDir/ is successful", 1);
+			} else {
+				LogPrint("Error curl remove directory $ftpDir1/$localDirectoryName/$timeCode/$subDir/ FAILED", 1);
+			}
                 }
                 my $curlRemoveTimecodeDir = "curl -s --user $ftpUser:$ftpPass ftp://$ftpHost -Q \"RMD $ftpDir1/$localDirectoryName/$timeCode/\"";
                 system($curlRemoveTimecodeDir);
+		my $curlExitStatusTimecodeDir=$?;
+		if ( $curlExitStatusTimecodeDir == 0 ) {
+			LogPrint("OK curl remove directory $ftpDir1/$localDirectoryName/$timeCode/ is successful", 1);
+		} else {
+			LogPrint("Error curl remove directory $ftpDir1/$localDirectoryName/$timeCode/ FAILED", 1);
+		}
         }
 }
 
