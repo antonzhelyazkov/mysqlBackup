@@ -261,7 +261,7 @@ if ( -d "$localCopyPath\/$localDirectoryName" ) {
 }
 }
 
-sub removeRemoteDirectory {
+sub curlRemoveRemoteDir {
 
 my $hostname =  hostname;
 my @hostname = split('\.', $hostname);
@@ -269,27 +269,44 @@ my $ftpDir1 = $hostname[0];
 my $timeCode;
 my $deleteTime = time() - ($remoteCopyDays * 86400);
 
-my $ftp = Net::FTP->new( "$ftpHost", Port => "$ftpPort", Debug => 0, Timeout => 2 );
-$ftp->login( $ftpUser, $ftpPass ) or return "Cannot login ", $ftp->message;
-$ftp->binary();
-my @dirs = $ftp->ls("$ftpDir1\/$localDirectoryName");
+my $curlCommand = "curl -s -l ftp://$ftpHost/$ftpDir1/$localDirectoryName/ --user $ftpUser:$ftpPass";
 
-for my $dir (@dirs) {
-	next if ($dir =~ /\./);
-	$timeCode = $dir;
-	$timeCode =~ s/$ftpDir1\/$localDirectoryName\///;
-	if (dateToEpoch($timeCode) < $deleteTime) {
-		LogPrint("Removing Directory $dir");
-		$ftp->rmdir($dir, 1);
-		if ($ftp->cwd($dir)) {
-			LogPrint("Error Remove directory failed $dir", 1);
-		} else {
-			LogPrint("OK Directory $dir successfully removed", 1);
-		}
-	}
+my @dirs = `$curlCommand`;
+
+foreach my $dir (@dirs) {
+        chomp $dir;
+        $timeCode = $dir;
+#        print $deleteTime." ".dateToEpoch($timeCode)."\n";
+        if (dateToEpoch($timeCode) < $deleteTime) {
+                my $curlCommandSubdir = "curl -s -l ftp://$ftpHost/$ftpDir1/$localDirectoryName/$timeCode/ --user $ftpUser:$ftpPass";
+#                print $curlCommandSubdir . "\n";
+                my @subDirs = `$curlCommandSubdir`;
+                foreach my $subDir (@subDirs) {
+                        chomp $subDir;
+                        my $curlListDatabasesDirs = "curl -s -l ftp://$ftpHost/$ftpDir1/$localDirectoryName/$timeCode/$subDir/ --user $ftpUser:$ftpPass";
+#                        print $curlListDatabasesDirs . "\n";
+                        my @listDatabases = `$curlListDatabasesDirs`;
+                        foreach my $database (@listDatabases) {
+                                chomp $database;
+                                my $curlListTables = "curl -s -l ftp://$ftpHost/$ftpDir1/$localDirectoryName/$timeCode/$subDir/$database/ --user $ftpUser:$ftpPass";
+                                my @listTables = `$curlListTables`;
+                                foreach my $databaseTable (@listTables) {
+                                        chomp $databaseTable;
+                                        my $curlRemoveTable = "curl -s --user $ftpUser:$ftpPass ftp://$ftpHost -Q \"DELE $ftpDir1/$localDirectoryName/$timeCode/$subDir/$database/$databaseTable\"";
+#                                        print $curlRemoveTable . "\n";
+                                        system($curlRemoveTable);
+                                }
+                                my $curlRemoveDatabaseDir = "curl -s --user $ftpUser:$ftpPass ftp://$ftpHost -Q \"RMD $ftpDir1/$localDirectoryName/$timeCode/$subDir/$database/\"";
+                                system($curlRemoveDatabaseDir);
+                        }
+                        my $curlRemoveHourDir = "curl -s --user $ftpUser:$ftpPass ftp://$ftpHost -Q \"RMD $ftpDir1/$localDirectoryName/$timeCode/$subDir/\"";
+                        system($curlRemoveHourDir);
+                }
+                my $curlRemoveTimecodeDir = "curl -s --user $ftpUser:$ftpPass ftp://$ftpHost -Q \"RMD $ftpDir1/$localDirectoryName/$timeCode/\"";
+                system($curlRemoveTimecodeDir);
+        }
 }
 
-$ftp->close();
 }
 
 sub curlTransfer {
@@ -614,7 +631,7 @@ if ( defined($keepLocalCopy)) {
 }
 
 if ( defined($keepRemoteCopy)) {
-	removeRemoteDirectory();
+	curlRemoveRemoteDir();
 }
 
 if ( defined($stopSlave)) {
