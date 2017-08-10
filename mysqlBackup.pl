@@ -134,10 +134,11 @@ $dbh->disconnect;
 
 for (@databases) {
         next if $_ =~ /^\#/;
-        next if $_ =~ /mysql/;
-        next if $_ =~ /performance_schema/;
-        next if $_ =~ /test/;
-        next if $_ =~ /information_schema/;
+        next if $_ =~ /^mysql$/;
+        next if $_ =~ /^performance_schema$/;
+        next if $_ =~ /^test$/;
+        next if $_ =~ /^information_schema$/;
+	next if $_ =~ /^sys$/;
         push( @databases_to_backup, $_ );
 }
 
