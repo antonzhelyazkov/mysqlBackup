@@ -70,16 +70,15 @@ fi
 
 for i in "$@"
 do
-  case $i in
-
-    --local-copy=*)
-      localCopy="${i#*=}"
-      shift # past argument=value
-    ;;
-    *)
-      # unknown option
-    ;;
-  esac
+	case $i in
+		--local-copy=*)
+		localCopy="${i#*=}"
+		shift # past argument=value
+		;;
+		*)
+		# unknown option
+		;;
+	esac
 done
 
 
@@ -88,6 +87,6 @@ if [ -z $localCopy ]; then
 fi
 
 echo $localCopy
-if [ $localCopy -ne 1 ] || [ $localCopy -ne 0 ]; then
+if [ $localCopy -ne 1 ] && [ $localCopy -ne 0 ]; then
 	logPrint "--local-copy accepts 0 or 1" 0 1
 fi
