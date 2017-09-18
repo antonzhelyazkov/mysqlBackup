@@ -1,5 +1,7 @@
 # mysqlBackup
 
+Simple script for mysql backup. Script is based on mysqldump.
+
 USAGE:
 --local-copy
 --local-copy-path
