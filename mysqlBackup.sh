@@ -9,7 +9,7 @@
 #################################
 
 # changelog
-# ver 0.2.1 - 18.09.2017
+# ver 0.2.2 - 21.09.2017
 
 OPTS=$(getopt -o vhl --long verbose,help,local-copy,local-copy-path:,local-copy-days: -n 'parse-options' -- "$@")
 getOptsExitCode=$?
@@ -100,4 +100,12 @@ logPrint "$localCopy $localCopyPath $localCopyDays" 0 0
 
 if [ $HELP = true ]; then
 	displayHelp
+fi
+
+if [ $localCopy == 0 ] && [ $localCopyPath != "/var/tmp" ]; then
+	logPrint "WARNING unused option --local-copy-path. If you want to use it, you must add -l or --local-copy" 0 0
+fi
+
+if [ $localCopy == 0 ] && [ $localCopyDays != 1 ]; then
+        logPrint "WARNING unused option --local-copy-days. If you want to use it, you must add -l or --local-copy" 0 0
 fi
