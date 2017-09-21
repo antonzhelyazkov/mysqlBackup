@@ -41,6 +41,16 @@ nagiosLog="/var/log/mysqlBackup.nagios"
 
 ########################################################
 
+displayHelp() {
+	echo "Usage: $0 [option...]" >&2
+	echo
+	echo "	-v,	--verbose		Run script in verbose mode"
+	echo "	-l,	--local-copy		Leave local copy"
+	echo
+# echo some stuff here for the -a or --add-options 
+	exit 1
+}
+
 function logPrint() {
 
 logMessage=$1
@@ -84,3 +94,7 @@ fi
 ########################################################
 
 logPrint $localCopy 0 0
+
+if [ $HELP = true ]; then
+	displayHelp
+fi
