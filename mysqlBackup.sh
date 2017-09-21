@@ -11,22 +11,25 @@
 # changelog
 # ver 0.2.1 - 18.09.2017
 
-OPTS=$(getopt -o vhlz: --long verbose,help,local-copy,zzz: -n 'parse-options' -- "$@")
+OPTS=$(getopt -o vhl --long verbose,help,local-copy,local-copy-path:,local-copy-days: -n 'parse-options' -- "$@")
 getOptsExitCode=$?
 if [ $getOptsExitCode != 0 ]; then
 	echo "Failed parsing options." >&2 ;
 	exit 1 ;
 fi
 
-#echo "$OPTS"
 eval set -- "$OPTS"
 
 localCopy=0
+localCopyPath="/var/tmp"
+localCopyDays=1
 verbose=0
 HELP=false
 
 while true; do
 	case "$1" in
+		--local-copy-path ) localCopyPath="$2"; shift; shift ;;
+		--local-copy-days ) localCopyDays="$2"; shift; shift ;;
 		-v | --verbose ) verbose=1; shift ;;
 		-h | --help ) HELP=true; shift ;;
 		-l | --local-copy ) localCopy=1; shift ;; 
@@ -93,7 +96,7 @@ fi
 
 ########################################################
 
-logPrint $localCopy 0 0
+logPrint "$localCopy $localCopyPath $localCopyDays" 0 0
 
 if [ $HELP = true ]; then
 	displayHelp
