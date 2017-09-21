@@ -11,14 +11,14 @@
 # changelog
 # ver 0.2.1 - 18.09.2017
 
-OPTS=$(getopt -o vhlz: --long verbose,help,local-copy,zzz: -n 'parse-options' -- "$@")
-getOptsExitCode=$?
-if [ $getOptsExitCode != 0 ]; then
+OPTS=$(getopt -o vhl: --long verbose,help,localcopy: -n 'parse-options' -- "$@")
+
+if [ $? != 0 ]; then
 	echo "Failed parsing options." >&2 ;
 	exit 1 ;
 fi
 
-#echo "$OPTS"
+echo "$OPTS"
 eval set -- "$OPTS"
 
 localCopy=0
@@ -26,14 +26,18 @@ verbose=0
 HELP=false
 
 while true; do
+	echo "qwe" $1
 	case "$1" in
 		-v | --verbose ) verbose=1; shift ;;
 		-h | --help ) HELP=true; shift ;;
-		-l | --local-copy ) localCopy=1; shift ;; 
+		-l | --localcopy ) localCopy=1; shift ;; 
 		-- ) shift; break ;;
 		* ) break ;;
 	esac
 done
+
+echo VERBOSE=$verbose
+echo HELP=$HELP
 
 scriptLog="/var/log/mysqlBackup.log"
 nagiosLog="/var/log/mysqlBackup.nagios"
@@ -84,3 +88,6 @@ fi
 ########################################################
 
 logPrint $localCopy 0 0
+if [ $localCopy -ne 1 ] && [ $localCopy -ne 0 ]; then
+	logPrint "--local-copy accepts 0 or 1" 0 1
+fi
