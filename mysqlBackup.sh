@@ -9,9 +9,9 @@
 #################################
 
 # changelog
-# ver 0.2.2 - 21.09.2017
+# ver 0.2.3 - 27.09.2017
 
-OPTS=$(getopt -o vhl --long verbose,help,local-copy,local-copy-path:,local-copy-days: -n 'parse-options' -- "$@")
+OPTS=$(getopt -o vhl --long verbose,help,local-copy,local-copy-path:,local-copy-days:,mysql-root-password: -n 'parse-options' -- "$@")
 getOptsExitCode=$?
 if [ $getOptsExitCode != 0 ]; then
 	echo "Failed parsing options." >&2 ;
@@ -28,6 +28,7 @@ HELP=false
 
 while true; do
 	case "$1" in
+		--mysql-root-password ) mysqlRootPassword="$2"; shift; shift ;;
 		--local-copy-path ) localCopyPath="$2"; shift; shift ;;
 		--local-copy-days ) localCopyDays="$2"; shift; shift ;;
 		-v | --verbose ) verbose=1; shift ;;
@@ -38,8 +39,12 @@ while true; do
 	esac
 done
 
-scriptLog="/var/log/mysqlBackup.log"
-nagiosLog="/var/log/mysqlBackup.nagios"
+dateTs=$(date +%s)
+ownScriptName=$(basename "$0" | sed -e 's/.sh$//g')
+hostname=$(hostname)
+scriptLog="/var/log/$ownScriptName.log"
+nagiosLog="/var/log/$ownScriptName.nagios"
+lastRun="/var/log/$ownScriptName.last"
 
 
 ########################################################
@@ -49,6 +54,9 @@ displayHelp() {
 	echo
 	echo "	-v,	--verbose		Run script in verbose mode"
 	echo "	-l,	--local-copy		Leave local copy"
+	echo "		--local-copy-path	Directory where local copy is stored"
+	echo "		--local-copy-days	Backup keep days"
+	echo "		--mysql-root-password	MySQL/MariaDB root password"
 	echo
 # echo some stuff here for the -a or --add-options 
 	exit 1
@@ -96,6 +104,14 @@ fi
 
 ########################################################
 
+logPrint START 0 0
+
+if [ -f $nagiosLog ]; then
+        logPrint "file $nagiosLog exists EXIT!" 1 1
+else
+        echo $$ > $nagiosLog
+fi
+
 logPrint "$localCopy $localCopyPath $localCopyDays" 0 0
 
 if [ $HELP = true ]; then
@@ -109,3 +125,13 @@ fi
 if [ $localCopy == 0 ] && [ $localCopyDays != 1 ]; then
         logPrint "WARNING unused option --local-copy-days. If you want to use it, you must add -l or --local-copy" 0 0
 fi
+
+########################################################
+
+if grep -Fq "ERROR" $nagiosLog ; then
+        logPrint "ERRORS are found. Must not remove $nagiosLog" 0 0
+else
+        rm -f $nagiosLog
+        logPrint "FINISH" 0 0
+fi
+echo $dateTs > $lastRun
