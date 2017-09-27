@@ -2,7 +2,15 @@
 
 Lightweight MySQL backup script to backup all your MySQL databases every night.
 
-It provides FTP tranfer and housekeep procedure
+It provides FTP tranfer and housekeep procedure.
+
+You could create dump on:
+
+1. all databases in one file.
+
+2. backup all databases in separate files.
+
+3. You could create backup per table.
 
 USAGE:
 --local-copy
