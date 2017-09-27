@@ -1,6 +1,7 @@
 # mysqlBackup
 
 Lightweight MySQL backup script to backup all your MySQL databases every night.
+
 It provides FTP tranfer and housekeep procedure
 
 USAGE:
