@@ -12,6 +12,10 @@ You could create dump on:
 
 3. You could create backup per table.
 
+4. Execute slave stop/start when needed
+
+5. Use pigz if possible.
+
 
 USAGE:
 
