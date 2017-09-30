@@ -16,6 +16,8 @@ You could create dump on:
 
 5. Use pigz if possible.
 
+6. Nagios connect. It rports to nagios if backup finished successfuly.
+
 
 USAGE:
 
