@@ -20,8 +20,8 @@ You could create dump on:
 
 
 USAGE:
-  --local-copy
-  --local-copy-path
+    --local-copy
+    --local-copy-path
   --local-copy-days
   --stop-slave
   --database
