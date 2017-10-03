@@ -112,7 +112,11 @@ else
         echo $$ > $nagiosLog
 fi
 
-logPrint "$localCopy $localCopyPath $localCopyDays" 0 0
+
+logPrint "localCopy $localCopy" 0 0
+logPrint "localCopyPath $localCopyPath" 0 0
+logPrint "localCopyDays $localCopyDays" 0 0
+logPrint "MySQL root pass $mysqlRootPassword" 0 0
 
 if [ $HELP = true ]; then
 	displayHelp
@@ -124,6 +128,17 @@ fi
 
 if [ $localCopy == 0 ] && [ $localCopyDays != 1 ]; then
         logPrint "WARNING unused option --local-copy-days. If you want to use it, you must add -l or --local-copy" 0 0
+fi
+
+if [ -z $mysqlRootPassword ]; then
+	logPrint "ERROR MySQL root password is missing add --mysql-root-password" 1 1
+fi
+
+logPrint "checking local mysql connection" 0 0
+mysql -h 127.0.0.1 -u root -p$mysqlRootPassword -e "quit"
+checkMysqlConnection=$?
+if [ $checkMysqlConnection -ne 0 ]; then
+	logPrint "ERROR MySQL connection failed. Check if root password is correct" 1 1
 fi
 
 ########################################################
