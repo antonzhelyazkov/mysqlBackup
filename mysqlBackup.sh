@@ -24,7 +24,9 @@ localCopy=0
 localCopyPath="/var/tmp"
 localCopyDays=1
 verbose=0
+mysqlHost="localhost"
 HELP=false
+mysqlBin="/usr/bin/mysql"
 
 while true; do
 	case "$1" in
@@ -135,11 +137,29 @@ if [ -z $mysqlRootPassword ]; then
 fi
 
 logPrint "checking local mysql connection" 0 0
-mysql -h 127.0.0.1 -u root -p$mysqlRootPassword -e "quit"
+mysql -h $mysqlHost -u root -p$mysqlRootPassword -e "quit"
 checkMysqlConnection=$?
 if [ $checkMysqlConnection -ne 0 ]; then
 	logPrint "ERROR MySQL connection failed. Check if root password is correct" 1 1
 fi
+
+secondsBhindMaster=$($mysqlBin -h $mysqlHost -u root -p$mysqlRootPassword -e "SHOW SLAVE STATUS\G"| grep "Seconds_Behind_Master" | awk '{ print $2 }')
+IORunning=$($mysqlBin -h $mysqlHost -u root -p$mysqlRootPassword -e "SHOW SLAVE STATUS\G" | grep "Slave_IO_Running" | awk '{ print $2 }')
+SQLRunning=$($mysqlBin -h $mysqlHost -u root -p$mysqlRootPassword -e "SHOW SLAVE STATUS\G" | grep "Slave_SQL_Running" | awk '{ print $2 }')
+
+echo $secondsBhindMaster
+
+if [ "$secondsBhindMaster" == "NULL" ]
+then
+	ERRORS=("${ERRORS[@]}" "The Slave is reporting 'NULL' (Seconds_Behind_Master)")
+	logPrint "The Slave is reporting NULL (Seconds_Behind_Master)" 0 0
+elif [[ $secondsBhindMaster > 60 ]]
+then
+	ERRORS=("${ERRORS[@]}" "The Slave is at least 60 seconds behind the master (Seconds_Behind_Master)")
+	logPrint "The Slave is at least 60 seconds behind the master (Seconds_Behind_Master) we have $secondsBhindMaster Seconds_Behind_Master" 0 0
+fi
+
+echo ${#ERRORS[@]}
 
 ########################################################
 
