@@ -56,6 +56,7 @@ my $localDirectoryName = "mysql";
 my $nagiosInfDefault = "/usr/local/share/nagios.inf";
 my $pidFile = "/var/run/mysqlBackup.pid";
 my $curlBin = "/usr/bin/curl";
+my $curlRateLimit = "2M";
 my $sleepTimeout = 0;
 
 my ($sec, $min, $hour, $mday, $mon, $year) = localtime;
@@ -339,7 +340,7 @@ my @hostname = split('\.', $hostname);
 my $ftpDir1 = $hostname[0];
 my $database = shift;
 
-my $curlCreateDirCommand = "$curlBin -s --ftp-create-dirs -T $tmpFile -u $ftpUser\:$ftpPass ftp\:\/\/$ftpHost\/$ftpDir1\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database/ --ftp-create-dirs";
+my $curlCreateDirCommand = "$curlBin -s --limit-rate $curlRateLimit --ftp-create-dirs -T $tmpFile -u $ftpUser\:$ftpPass ftp\:\/\/$ftpHost\/$ftpDir1\/$localDirectoryName\/$dateStamp\/$hourStamp\/$database/ --ftp-create-dirs";
 system($curlCreateDirCommand);
 my $curlExitStatus=$?;
 
