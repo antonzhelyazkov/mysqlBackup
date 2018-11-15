@@ -23,7 +23,7 @@ eval set -- "$OPTS"
 localCopy=0
 localCopyPath="/var/tmp"
 localCopyDays=1
-verbose=0
+verbose=1
 mysqlHost="localhost"
 HELP=false
 mysqlBin="/usr/bin/mysql"
@@ -44,6 +44,8 @@ done
 dateTs=$(date +%s)
 ownScriptName=$(basename "$0" | sed -e 's/.sh$//g')
 hostname=$(hostname)
+mysqlUser="root"
+mysqlConnString="$mysqlBin -h $mysqlHost -u $mysqlUser -p$mysqlRootPassword -Bse"
 scriptLog="/var/log/$ownScriptName.log"
 nagiosLog="/var/log/$ownScriptName.nagios"
 lastRun="/var/log/$ownScriptName.last"
@@ -120,6 +122,7 @@ logPrint "localCopyPath $localCopyPath" 0 0
 logPrint "localCopyDays $localCopyDays" 0 0
 logPrint "MySQL root pass $mysqlRootPassword" 0 0
 
+
 if [ $HELP = true ]; then
 	displayHelp
 fi
@@ -143,9 +146,9 @@ if [ $checkMysqlConnection -ne 0 ]; then
 	logPrint "ERROR MySQL connection failed. Check if root password is correct" 1 1
 fi
 
-secondsBhindMaster=$($mysqlBin -h $mysqlHost -u root -p$mysqlRootPassword -e "SHOW SLAVE STATUS\G"| grep "Seconds_Behind_Master" | awk '{ print $2 }')
-IORunning=$($mysqlBin -h $mysqlHost -u root -p$mysqlRootPassword -e "SHOW SLAVE STATUS\G" | grep "Slave_IO_Running" | awk '{ print $2 }')
-SQLRunning=$($mysqlBin -h $mysqlHost -u root -p$mysqlRootPassword -e "SHOW SLAVE STATUS\G" | grep "Slave_SQL_Running" | awk '{ print $2 }')
+secondsBhindMaster=$($mysqlConnString "SHOW SLAVE STATUS\G"| grep "Seconds_Behind_Master" | awk '{ print $2 }')
+IORunning=$($mysqlConnString "SHOW SLAVE STATUS\G" | grep "Slave_IO_Running" | awk '{ print $2 }')
+SQLRunning=$($mysqlConnString "SHOW SLAVE STATUS\G" | grep "Slave_SQL_Running" | awk '{ print $2 }')
 
 echo $secondsBhindMaster
 
@@ -157,6 +160,22 @@ elif [[ $secondsBhindMaster > 60 ]]
 then
 	ERRORS=("${ERRORS[@]}" "The Slave is at least 60 seconds behind the master (Seconds_Behind_Master)")
 	logPrint "The Slave is at least 60 seconds behind the master (Seconds_Behind_Master) we have $secondsBhindMaster Seconds_Behind_Master" 0 0
+else
+	logPrint "The Slave is reporting $secondsBhindMaster (Seconds_Behind_Master)" 0 0
+	logPrint "Stopping slave" 0 0
+	$mysqlConnString "stop slave"
+	sleep 100
+	checkStopSlave=$($mysqlConnString "SHOW SLAVE STATUS\G"| grep "Seconds_Behind_Master" | awk '{ print $2 }')
+	if [ "$checkStopSlave" == "NULL" ]
+	then
+		logPrint "SLAVE STOPPED" 0 0
+	else
+		logPrint "Error in slave stopping" 1 1
+	fi
+	$mysqlConnString "start slave"
+	sleep 3
+	checkStartSlave=$($mysqlConnString "SHOW SLAVE STATUS\G"| grep "Seconds_Behind_Master" | awk '{ print $2 }')
+	logPrint "start $checkStartSlave" 0 0
 fi
 
 echo ${#ERRORS[@]}
