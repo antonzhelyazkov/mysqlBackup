@@ -11,7 +11,7 @@
 # changelog
 # ver 0.2.10 - 16.11.2018
 
-OPTS=$(getopt -o vhl --long verbose,help,local-copy,local-copy-path:,local-copy-days:,mysql-root-password: -n 'parse-options' -- "$@")
+OPTS=$(getopt -o vhtl --long verbose,help,tables,local-copy,local-copy-path:,local-copy-days:,mysql-root-password: -n 'parse-options' -- "$@")
 getOptsExitCode=$?
 if [ $getOptsExitCode != 0 ]; then
 	echo "Failed parsing options." >&2 ;
@@ -27,12 +27,14 @@ verbose=1
 mysqlHost="localhost"
 HELP=false
 mysqlBin="/usr/bin/mysql"
+tables=0
 
 while true; do
 	case "$1" in
 		--mysql-root-password ) mysqlRootPassword="$2"; shift; shift ;;
 		--local-copy-path ) localCopyPath="$2"; shift; shift ;;
 		--local-copy-days ) localCopyDays="$2"; shift; shift ;;
+		-t | --tables ) tables=1; shift ;;
 		-v | --verbose ) verbose=1; shift ;;
 		-h | --help ) HELP=true; shift ;;
 		-l | --local-copy ) localCopy=1; shift ;; 
@@ -119,6 +121,36 @@ fi
 
 }
 
+function dumpByTables() {
+
+databaseName=$1
+
+currentDBDir=$currentBackupDir/$databaseName
+mkdir $currentDBDir
+checkMDDBDir=$?
+if [ $checkMDDBDir -ne 0 ]
+then
+	logPrint "could not create directory $currentDBDir" 1 1
+fi
+
+logPrint "current directory $currentDBDir" 0 0
+
+mysqlTablesString="$mysqlBin -h $mysqlHost -u $mysqlUser -p$mysqlRootPassword $databaseName -Bse"
+mapfile localTables < <( $mysqlTablesString "show tables" )
+for table in "${localTables[@]}"
+do
+	table=$(echo -e "${table}" | tr -d '[:space:]')
+	logPrint "dumping $databaseName $table" 0 0
+	mysqldump --host=$mysqlHost --user=$mysqlUser --password=$mysqlRootPassword $databaseName $table | pigz > $currentDBDir/$table.sql.gz
+	checkTableDumpStatus=$?
+	if [ $checkTableDumpStatus -ne 0 ]
+	then
+		logPrint "ERROR in dump $databaseName $table" 1 0
+	fi
+done
+
+}
+
 ########################################################
 
 logPrint START 0 0
@@ -194,13 +226,9 @@ secondsBhindMaster=$($mysqlConnString "SHOW SLAVE STATUS\G"| grep "Seconds_Behin
 IORunning=$($mysqlConnString "SHOW SLAVE STATUS\G" | grep "Slave_IO_Running" | awk '{ print $2 }')
 SQLRunning=$($mysqlConnString "SHOW SLAVE STATUS\G" | grep "Slave_SQL_Running" | awk '{ print $2 }')
 
-echo $secondsBhindMaster
-echo $IORunning
-echo $SQLRunning
-
-if [ "$secondsBhindMaster" == "NULL" ] && [ "$isSalve" == 1 ]
+if [ "$secondsBhindMaster" == "NULL" ]
 then
-	ERRORS=("${ERRORS[@]}" "The Slave is reporting 'NULL' (Seconds_Behind_Master)")
+#	ERRORS=("${ERRORS[@]}" "The Slave is reporting 'NULL' (Seconds_Behind_Master)")
 	logPrint "The Slave is reporting NULL (Seconds_Behind_Master)" 0 0
 elif [[ $secondsBhindMaster > 60 ]]
 then
@@ -215,8 +243,13 @@ then
                         DB=$(echo -e "${DB}" | tr -d '[:space:]')
                         if ! [[ "$DB" =~ ^(information_schema|mysql|performance_schema)$ ]]
                         then
-                                logPrint "dumping $DB" 0 0
-                                mysqldump --host=$mysqlHost --user=$mysqlUser --password=$mysqlRootPassword -B $DB | pigz > $currentBackupDir/$DB.tar.gz
+				if [ $tables -eq 0 ]
+                                then
+                                	logPrint "dumping $DB" 0 0
+	                                mysqldump --host=$mysqlHost --user=$mysqlUser --password=$mysqlRootPassword -B $DB | pigz > $currentBackupDir/$DB.tar.gz
+				else
+					dumpByTables "$DB"
+				fi
                         fi
                 done
 else
@@ -234,16 +267,26 @@ else
 			DB=$(echo -e "${DB}" | tr -d '[:space:]')
 			if ! [[ "$DB" =~ ^(information_schema|mysql|performance_schema)$ ]]
 			then
-				logPrint "dumping $DB" 0 0
-				masterLogFile=$($mysqlSlaveString "show slave status\G" | grep -w "Master_Log_File")
-				masterLogPosition=$($mysqlSlaveString "show slave status\G" | grep -w "Read_Master_Log_Pos")
-				masterHost=$($mysqlSlaveString "show slave status\G" | grep -w "Master_Host")
-				masterUser=$($mysqlSlaveString "show slave status\G" | grep -w "Master_User")
-				echo $masterLogFile > $currentBackupDir/status.inf
-				echo $masterLogPosition >> $currentBackupDir/status.inf
-				echo $masterHost >> $currentBackupDir/status.inf
-				echo $masterUser >> $currentBackupDir/status.inf
-				mysqldump --host=$mysqlHost --user=$mysqlUser --password=$mysqlRootPassword -B $DB | pigz > $currentBackupDir/$DB.tar.gz
+				if [ $tables -eq 0 ]
+				then
+					logPrint "dumping $DB" 0 0
+					masterLogFile=$($mysqlSlaveString "show slave status\G" | grep -w "Master_Log_File")
+					masterLogPosition=$($mysqlSlaveString "show slave status\G" | grep -w "Read_Master_Log_Pos")
+					masterHost=$($mysqlSlaveString "show slave status\G" | grep -w "Master_Host")
+					masterUser=$($mysqlSlaveString "show slave status\G" | grep -w "Master_User")
+					echo $masterLogFile > $currentBackupDir/status.inf
+					echo $masterLogPosition >> $currentBackupDir/status.inf
+					echo $masterHost >> $currentBackupDir/status.inf
+					echo $masterUser >> $currentBackupDir/status.inf
+					mysqldump --host=$mysqlHost --user=$mysqlUser --password=$mysqlRootPassword -B $DB | pigz > $currentBackupDir/$DB.tar.gz
+					checkDumpStatus=$?
+					if [ $checkDumpStatus -ne 0 ]
+					then
+						logPrint "ERROR in dump $databaseName" 1 0
+					fi
+				else
+					dumpByTables "$DB"
+				fi
 			fi
 		done
 	else
