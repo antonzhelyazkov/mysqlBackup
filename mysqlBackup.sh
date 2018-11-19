@@ -62,6 +62,8 @@ rateLimit="12048K"
 mysqlDir="$localCopyPath/mysql"
 currentBackupDir="$mysqlDir/$(date +%Y%m%d%H%M)"
 
+isSalve=1
+
 ########################################################
 
 displayHelp() {
@@ -196,7 +198,7 @@ echo $secondsBhindMaster
 echo $IORunning
 echo $SQLRunning
 
-if [ "$secondsBhindMaster" == "NULL" ] && [ ! -z $secondsBhindMaster ]
+if [ "$secondsBhindMaster" == "NULL" ] && [ "$isSalve" == 1 ]
 then
 	ERRORS=("${ERRORS[@]}" "The Slave is reporting 'NULL' (Seconds_Behind_Master)")
 	logPrint "The Slave is reporting NULL (Seconds_Behind_Master)" 0 0
@@ -204,6 +206,19 @@ elif [[ $secondsBhindMaster > 60 ]]
 then
 	ERRORS=("${ERRORS[@]}" "The Slave is at least 60 seconds behind the master (Seconds_Behind_Master)")
 	logPrint "The Slave is at least 60 seconds behind the master (Seconds_Behind_Master) we have $secondsBhindMaster Seconds_Behind_Master" 0 0
+elif [[ -z $secondsBhindMaster ]]
+then
+	echo "seconds Master is EMPTY"
+	mapfile localDatabases  < <( $mysqlConnString "show databases" )
+                for DB in "${localDatabases[@]}"
+                do
+                        DB=$(echo -e "${DB}" | tr -d '[:space:]')
+                        if ! [[ "$DB" =~ ^(information_schema|mysql|performance_schema)$ ]]
+                        then
+                                logPrint "dumping $DB" 0 0
+                                mysqldump --host=$mysqlHost --user=$mysqlUser --password=$mysqlRootPassword -B $DB | pigz > $currentBackupDir/$DB.tar.gz
+                        fi
+                done
 else
 	logPrint "The Slave is reporting $secondsBhindMaster (Seconds_Behind_Master)" 0 0
 	logPrint "Stopping slave" 0 0
