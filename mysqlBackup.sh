@@ -54,10 +54,6 @@ scriptLog="/var/log/$ownScriptName.log"
 nagiosLog="/var/log/$ownScriptName.nagios"
 lastRun="/var/log/$ownScriptName.last"
 
-ftpHost="212.73.140.112";
-ftpUser="photo-media"
-ftpPass='7kZt66qwYn3GT4qz'
-
 ftpRemotePath="/$serverName-mysql-backup/"
 rateLimit="12048K"
 
