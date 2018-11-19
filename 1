@@ -44,20 +44,12 @@ done
 dateTs=$(date +%s)
 ownScriptName=$(basename "$0" | sed -e 's/.sh$//g')
 hostname=$(hostname)
-serverName=$(hostname -s)
 mysqlUser="root"
 mysqlConnString="$mysqlBin -h $mysqlHost -u $mysqlUser -p$mysqlRootPassword -Bse"
 mysqlSlaveString="$mysqlBin -h $mysqlHost -u $mysqlUser -p$mysqlRootPassword -se"
 scriptLog="/var/log/$ownScriptName.log"
 nagiosLog="/var/log/$ownScriptName.nagios"
 lastRun="/var/log/$ownScriptName.last"
-
-ftpHost="212.73.140.112";
-ftpUser="photo-media"
-ftpPass='7kZt66qwYn3GT4qz'
-
-ftpRemotePath="/$serverName-mysql-backup/"
-rateLimit="12048K"
 
 mysqlDir="$localCopyPath/mysql"
 currentBackupDir="$mysqlDir/$(date +%Y%m%d%H%M)"
@@ -220,14 +212,8 @@ else
 			if ! [[ "$DB" =~ ^(information_schema|mysql|performance_schema)$ ]]
 			then
 				logPrint "dumping $DB" 0 0
-				masterLogFile=$($mysqlSlaveString "show slave status\G" | grep -w "Master_Log_File")
-				masterLogPosition=$($mysqlSlaveString "show slave status\G" | grep -w "Read_Master_Log_Pos")
-				masterHost=$($mysqlSlaveString "show slave status\G" | grep -w "Master_Host")
-				masterUser=$($mysqlSlaveString "show slave status\G" | grep -w "Master_User")
+				masterLogFile=$($mysqlSlaveString "show slave status\G" | grep -w )
 				echo $masterLogFile > $currentBackupDir/status.inf
-				echo $masterLogPosition >> $currentBackupDir/status.inf
-				echo $masterHost >> $currentBackupDir/status.inf
-				echo $masterUser >> $currentBackupDir/status.inf
 				mysqldump --host=$mysqlHost --user=$mysqlUser --password=$mysqlRootPassword -B $DB | pigz > $currentBackupDir/$DB.tar.gz
 			fi
 		done
