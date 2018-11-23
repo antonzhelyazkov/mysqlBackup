@@ -11,7 +11,7 @@
 # changelog
 # ver 0.2.10 - 16.11.2018
 
-OPTS=$(getopt -o vhtl --long verbose,help,tables,local-copy,local-copy-path:,local-copy-days:,mysql-root-password:,ftp-host:,ftp-user:,ftp-pass: -n 'parse-options' -- "$@")
+OPTS=$(getopt -o vhtl --long verbose,help,tables,local-copy,local-copy-path:,local-copy-days:,mysql-root-password:,ftp-host:,ftp-user:,ftp-pass:,mysql-user:,mysql-host: -n 'parse-options' -- "$@")
 getOptsExitCode=$?
 if [ $getOptsExitCode != 0 ]; then
 	echo "Failed parsing options." >&2 ;
@@ -24,14 +24,17 @@ localCopy=1
 localCopyPath="/var/tmp"
 localCopyDays=1
 localBackupDays=$(date +%Y%m%d%H%M -d "$localCopyDays day ago")
-verbose=1
+verbose=0
 mysqlHost="localhost"
 HELP=false
 mysqlBin="/usr/bin/mysql"
+mysqlUser="root"
 tables=0
 
 while true; do
 	case "$1" in
+		--mysql-host ) mysqlHost="$2"; shift; shift ;;
+		--mysql-user ) mysqlUser="$2"; shift; shift ;;
 		--mysql-root-password ) mysqlRootPassword="$2"; shift; shift ;;
 		--local-copy-path ) localCopyPath="$2"; shift; shift ;;
 		--local-copy-days ) localCopyDays="$2"; shift; shift ;;
@@ -51,7 +54,6 @@ dateTs=$(date +%s)
 ownScriptName=$(basename "$0" | sed -e 's/.sh$//g')
 hostname=$(hostname)
 serverName=$(hostname -s)
-mysqlUser="root"
 mysqlConnString="$mysqlBin -h $mysqlHost -u $mysqlUser -p$mysqlRootPassword -Bse"
 mysqlSlaveString="$mysqlBin -h $mysqlHost -u $mysqlUser -p$mysqlRootPassword -se"
 scriptLog="/var/log/$ownScriptName.log"
@@ -59,7 +61,7 @@ nagiosLog="/var/log/$ownScriptName.nagios"
 lastRun="/var/log/$ownScriptName.last"
 
 ftpRemotePath="/$serverName-mysql-backup/"
-rateLimit="12048K"
+rateLimit="2048K"
 # Speed is in bytes per second. 0 - means unlimited
 ftpUploadSpeed=0
 ftpDownloadSpeed=0
@@ -209,7 +211,7 @@ fi
 logPrint "localCopy $localCopy" 0 0
 logPrint "localCopyPath $localCopyPath" 0 0
 logPrint "localCopyDays $localCopyDays" 0 0
-logPrint "MySQL root pass $mysqlRootPassword" 0 0
+logPrint "MySQL $mysqlUser pass $mysqlRootPassword" 0 0
 
 
 if [ $HELP = true ]; then
@@ -225,7 +227,7 @@ if [ $localCopy == 0 ] && [ $localCopyDays != 1 ]; then
 fi
 
 if [ -z $mysqlRootPassword ]; then
-	logPrint "ERROR MySQL root password is missing add --mysql-root-password" 1 1
+	logPrint "ERROR MySQL $mysqlUser password is missing add --mysql-root-password" 1 1
 fi
 
 echo $localCopyPath 
@@ -259,10 +261,10 @@ then
 fi
 
 logPrint "checking local mysql connection" 0 0
-mysql -h $mysqlHost -u root -p$mysqlRootPassword -e "quit"
+mysql -h $mysqlHost -u $mysqlUser -p$mysqlRootPassword -e "quit"
 checkMysqlConnection=$?
 if [ $checkMysqlConnection -ne 0 ]; then
-	logPrint "ERROR MySQL connection failed. Check if root password is correct" 1 1
+	logPrint "ERROR MySQL connection failed. Check if $mysqlUser password is correct" 1 1
 fi
 
 secondsBhindMaster=$($mysqlConnString "SHOW SLAVE STATUS\G"| grep "Seconds_Behind_Master" | awk '{ print $2 }')
