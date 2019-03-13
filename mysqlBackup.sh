@@ -291,7 +291,7 @@ then
 				if [ $tables -eq 0 ]
                                 then
                                 	logPrint "dumping $DB" 0 0
-	                                mysqldump --host=$mysqlHost --user=$mysqlUser --password=$mysqlRootPassword -B $DB | pigz > $currentBackupDir/$DB.tar.gz
+	                                mysqldump --host=$mysqlHost --user=$mysqlUser --password=$mysqlRootPassword -B $DB | pigz > $currentBackupDir/$DB.sql.gz
 				else
 					dumpByTables "$DB"
 				fi
@@ -323,7 +323,7 @@ else
 					echo $masterLogPosition >> $currentBackupDir/status.inf
 					echo $masterHost >> $currentBackupDir/status.inf
 					echo $masterUser >> $currentBackupDir/status.inf
-					mysqldump --host=$mysqlHost --user=$mysqlUser --password=$mysqlRootPassword -B $DB | pigz > $currentBackupDir/$DB.tar.gz
+					mysqldump --host=$mysqlHost --user=$mysqlUser --password=$mysqlRootPassword -B $DB | pigz > $currentBackupDir/$DB.sql.gz
 					checkDumpStatus=$?
 					if [ $checkDumpStatus -ne 0 ]
 					then
