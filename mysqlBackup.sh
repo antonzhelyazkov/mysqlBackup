@@ -286,7 +286,7 @@ then
                 for DB in "${localDatabases[@]}"
                 do
                         DB=$(echo -e "${DB}" | tr -d '[:space:]')
-                        if ! [[ "$DB" =~ ^(information_schema|mysql|performance_schema)$ ]]
+                        if ! [[ "$DB" =~ ^(information_schema|performance_schema)$ ]]
                         then
 				if [ $tables -eq 0 ]
                                 then
@@ -310,7 +310,7 @@ else
 		for DB in "${localDatabases[@]}"
 		do
 			DB=$(echo -e "${DB}" | tr -d '[:space:]')
-			if ! [[ "$DB" =~ ^(information_schema|mysql|performance_schema)$ ]]
+			if ! [[ "$DB" =~ ^(information_schema|performance_schema)$ ]]
 			then
 				if [ $tables -eq 0 ]
 				then
