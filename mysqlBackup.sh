@@ -11,7 +11,7 @@
 # changelog
 # ver 0.2.10 - 16.11.2018
 
-OPTS=$(getopt -o vhtl --long verbose,help,tables,local-copy,local-copy-path:,local-copy-days:,mysql-root-password:,ftp-host:,ftp-user:,ftp-pass:,mysql-user:,mysql-host: -n 'parse-options' -- "$@")
+OPTS=$(getopt -o vhtly --long verbose,help,tables,local-copy,year-copy,local-copy-path:,local-copy-days:,mysql-root-password:,ftp-host:,ftp-user:,ftp-pass:,mysql-user:,mysql-host: -n 'parse-options' -- "$@")
 getOptsExitCode=$?
 if [ $getOptsExitCode != 0 ]; then
 	echo "Failed parsing options." >&2 ;
@@ -45,6 +45,7 @@ while true; do
 		-v | --verbose ) verbose=1; shift ;;
 		-h | --help ) HELP=true; shift ;;
 		-l | --local-copy ) localCopy=1; shift ;; 
+		-y | --year-copy ) yearCopy=1; shift ;;
 		-- ) shift; break ;;
 		* ) break ;;
 	esac
