@@ -9,7 +9,7 @@
 #################################
 
 # changelog
-# ver 0.2.10 - 16.11.2018
+# ver 0.2.11 - 06.01.2020
 
 OPTS=$(getopt -o vhtly --long verbose,help,tables,local-copy,year-copy,local-copy-path:,local-copy-days:,mysql-root-password:,ftp-host:,ftp-user:,ftp-pass:,mysql-user:,mysql-host: -n 'parse-options' -- "$@")
 getOptsExitCode=$?
