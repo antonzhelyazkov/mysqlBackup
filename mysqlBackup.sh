@@ -80,6 +80,7 @@ displayHelp() {
 	echo "	-v,	--verbose		Run script in verbose mode"
 	echo "	-l,	--local-copy		Leave local copy"
 	echo "	-t,	--tables		Split archive by tables"
+	echo "	-y,	--year-copy		Keeps backup each 1-st date one year ago"
 	echo "		--local-copy-path	Directory where local copy is stored"
 	echo "		--local-copy-days	Backup keep days"
 	echo "		--mysql-root-password	MySQL/MariaDB root password"
